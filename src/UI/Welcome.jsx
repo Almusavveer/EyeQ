@@ -1,11 +1,11 @@
 import { useContext } from "react";
-// import { useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 const Welcome = ({ screen, setScreen }) => {
-  // const naviagate = useNavigate();
+  const naviagate = useNavigate();
   const handleChnage = (name) => {
     setScreen(name);
-    // name === "Login" ? naviagate("/") : naviagate("/register");
+    name === "Login" ? naviagate("/login") : naviagate("/register");
   };
 
   return (

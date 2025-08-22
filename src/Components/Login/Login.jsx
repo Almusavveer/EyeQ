@@ -1,9 +1,11 @@
 import LoginFom from "../../UI/LoginFom";
 import Option from "../../UI/Option";
+import Welcome from "../../UI/Welcome";
 
-const Login = () => {
+const Login = ({ screen, setScreen }) => {
   return (
     <div>
+      <Welcome screen={screen} setScreen={setScreen} />
       <LoginFom />
       <Option />
       <p className="w-full text-center text-gray-400">

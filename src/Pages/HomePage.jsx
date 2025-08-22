@@ -1,16 +1,19 @@
-import { useState } from "react";
+import { useEffect } from "react";
 import Welcome from "../UI/Welcome";
-import Login from "../Components/Login/Login";
-import Register from "../Components/Register/Register";
 import { useNavigate } from "react-router";
 
-const HomePage = () => {
-  const [screen, setScreen] = useState("Login");
-  const navigate = useNavigate()
+const HomePage = ({ screen, setScreen }) => {
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (screen === "Login") {
+      navigate("/login");
+    } else {
+      navigate("/register");
+    }
+  }, [screen, navigate]);
   return (
     <div className="flex h-full w-full flex-col justify-center">
       <Welcome screen={screen} setScreen={setScreen} />
-      {screen === "Login" ? <Login /> : <Register />}
     </div>
   );
 };
