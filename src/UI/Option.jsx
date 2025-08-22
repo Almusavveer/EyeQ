@@ -29,7 +29,7 @@ const Option = ({error, setError}) => {
       }
       console.log("logged in");
       
-      // navigate("/dashboard");
+      navigate("/home");
     } catch (err) {
       setError(err.message);
     }
