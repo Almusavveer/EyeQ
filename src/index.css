@@ -67,3 +67,9 @@
     font-family: var(--font-sans);
   }
 }
+
+@layer utilities {
+  .scrollbar{
+    scrollbar-width: none;
+  }
+}
