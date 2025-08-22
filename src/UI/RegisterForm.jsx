@@ -29,8 +29,8 @@ const RegisterFom = ({error, setError}) => {
         createdAt: serverTimestamp(),
       });
 
-      // navigate("/login"); // redirect to login
-      console.log("successfull");
+      navigate("/home", {replace: true}); // redirect to login
+      // console.log("successfull");
       
     } catch (err) {
       setError(err.message);
