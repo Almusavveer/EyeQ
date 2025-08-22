@@ -1,0 +1,69 @@
+@import "tailwindcss";
+
+/* Inter Variable Font - Normal */
+@font-face {
+  font-family: "Inter";
+  src: url("/Fonts/Inter-VariableFont_opsz,wght.ttf") format("truetype");
+  font-weight: 100 900; /* Thin → Black  */
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Inter Variable Font - Italic */
+@font-face {
+  font-family: "Inter";
+  src: url("/Fonts/Inter-Italic-VariableFont_opsz,wght.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Tailwind v4 @theme config */
+@theme {
+  --font-sans: "Inter", sans-serif;
+}
+
+/* 🌞 Light mode (default) */
+@theme {
+  --color-primary: #1D4ED8;        /* Deep Royal Blue */
+  --color-primary-light: #3B82F6;  /* Soft Sky Blue */
+  --color-primary-dark: #1E40AF;   /* Darker Blue */
+
+  --color-secondary-cyan: #22D3EE;
+  --color-secondary-lavender: #A78BFA;
+  --color-secondary-yellow: #FBBF24;
+
+  --color-status-success: #34D399;
+  --color-status-error: #F87171;
+
+  --color-neutral-light: #F8FAFC;
+  --color-neutral-gray: #CBD5E1;
+  --color-neutral-dark: #1E293B;
+}
+
+/* 🌙 Dark mode overrides */
+@variant dark {
+  @theme {
+     --color-primary: #3B82F6;     /* Softened Blue */
+    --color-secondary: #F1F5F9;   /* Light Slate */
+    --color-background: #0F172A;  /* Deep Navy */
+
+    --color-success: #22C55E;
+    --color-error: #EF4444;
+    --color-warning: #EAB308;
+    --color-info: #22D3EE;
+
+    --color-text-primary: #F1F5F9;
+    --color-text-secondary: #94A3B8;
+    --color-border: #334155;
+    --color-muted: #64748B
+  }
+}
+
+
+/* Optional: make Inter the default font everywhere */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+  }
+}
