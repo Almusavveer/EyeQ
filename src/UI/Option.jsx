@@ -5,8 +5,10 @@ import { FaFacebook } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { FiFacebook } from "react-icons/fi";
 import { auth, db } from "../firebase";
+import { useNavigate } from "react-router";
 
 const Option = ({error, setError}) => {
+  const navigate = useNavigate()
   const handleGoogleSignup = async () => {
     try {
       const provider = new GoogleAuthProvider();
@@ -27,7 +29,7 @@ const Option = ({error, setError}) => {
         });
         console.log("Signup with google");
       }
-      console.log("logged in");
+      // console.log("logged in");
       
       navigate("/home");
     } catch (err) {
