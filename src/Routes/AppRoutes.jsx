@@ -5,6 +5,7 @@ import Home from "../Pages/Home";
 import HomePage from "../Pages/HomePage";
 import { useState } from "react";
 import ExamBuilder from "../Pages/ExamBuilder";
+import ReviewEdit from "../Pages/ReviewEdit";
 
 const AppRoutes = () => {
   const [screen, setScreen] = useState("Login");
@@ -15,6 +16,7 @@ const AppRoutes = () => {
       <Route path="/register" element={<Register screen={screen} setScreen={setScreen}/>} />
       <Route path="/home" element={<Home />} />
       <Route path="/exambuilder" element={<ExamBuilder />} />
+      <Route path="/review" element={<ReviewEdit />} />
     </Routes>
   );
 };

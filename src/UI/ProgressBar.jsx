@@ -11,7 +11,7 @@ export const ProgressBar = ({ currentStep }) => {
           </div>
           {index < steps.length - 1 && (
             <div
-              className={`h-1 w-46 transition-colors duration-300 ${currentStep > step ? "bg-yellow-400" : "bg-gray-300"}`}
+              className={`h-1 w-36 transition-colors duration-300 ${currentStep > step ? "bg-yellow-400" : "bg-gray-300"}`}
             ></div>
           )}
         </div>

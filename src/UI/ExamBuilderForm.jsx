@@ -2,6 +2,7 @@ import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { useRef, useState } from "react";
 import { FiUploadCloud } from "react-icons/fi";
 import { db } from "../firebase";
+import { useNavigate } from "react-router";
 
 const ExamBuilderForm = () => {
   const [title, setTitle] = useState("");
@@ -9,6 +10,7 @@ const ExamBuilderForm = () => {
   const [time, setTime] = useState("");
   const [duration, setDuration] = useState("");
   const fileInputRef = useRef(null);
+  const navigate = useNavigate()
 
   const handleDivClick = () => {
     fileInputRef.current.click();
@@ -47,7 +49,7 @@ const ExamBuilderForm = () => {
   return (
     <form
       action=""
-      className="flex h-150 w-full flex-col justify-between"
+      className="flex h-fit gap-5 w-full flex-col justify-between"
       onSubmit={handleSubmit}
     >
       <div className="mt-4 flex h-22 w-full flex-col items-start justify-around">
@@ -61,7 +63,7 @@ const ExamBuilderForm = () => {
         />
       </div>
       <div className="flex w-full items-center justify-between">
-        <div className="flex h-22 w-60 flex-col items-start justify-around">
+        <div className="flex h-22 w-44 flex-col items-start justify-around">
           <h1 className="text-lg font-semibold">Exam Date</h1>
           <input
             type="date"
@@ -71,7 +73,7 @@ const ExamBuilderForm = () => {
             placeholder="Maths test"
           />
         </div>
-        <div className="flex h-22 w-40 flex-col items-start justify-around">
+        <div className="flex h-22 w-32 flex-col items-start justify-around">
           <h1 className="text-lg font-semibold">Exam Time</h1>
           <input
             type="time"
@@ -105,8 +107,10 @@ const ExamBuilderForm = () => {
         />
         <p>Drop your PDF here, or Browse</p>
       </div>
-      <button className="h-12 w-full cursor-pointer rounded-full bg-yellow-400 py-2 text-lg font-bold">
-        Upload PDF
+      <button className="h-12 w-full cursor-pointer rounded-full bg-yellow-400 py-2 text-lg font-bold" onClick={() => {
+        navigate("/review")
+      }}>
+        Create Exam
       </button>
     </form>
   );

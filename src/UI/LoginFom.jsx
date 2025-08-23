@@ -9,15 +9,17 @@ const LoginFom = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/home", {replace: true})    
+      navigate("/home", { replace: true });
     } catch (error) {
-      setError(error.message);
+      setError(
+        "We couldn’t find an account with that email. Want to sign up instead?",
+      );
     }
   };
   return (

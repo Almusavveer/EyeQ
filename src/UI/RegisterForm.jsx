@@ -33,7 +33,7 @@ const RegisterFom = ({error, setError}) => {
       // console.log("successfull");
       
     } catch (err) {
-      setError(err.message);
+      setError("Looks like this email is already in use. Want to log in instead?");
     }
   };
   return (

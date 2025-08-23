@@ -39,22 +39,22 @@ const Option = ({error, setError}) => {
   return (
     <div className="flex h-28 flex-col justify-around">
       <div className="flex items-center justify-between">
-        <span className="h-0 w-30 border border-gray-300"></span>
+        <span className="h-0 w-27 border border-gray-300"></span>
         <p>or continue with</p>
-        <span className="h-0 w-30 border border-gray-300"></span>
+        <span className="h-0 w-27 border border-gray-300"></span>
       </div>
-      <div className="mx-auto flex w-72 items-center justify-between">
+      <div className="mx-auto flex w-full items-center justify-between">
         <button
-          className="flex w-30 cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-300 bg-white py-2"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-300 bg-white py-2"
           onClick={handleGoogleSignup}
         >
           <FcGoogle className="size-6" />
           Google
         </button>
-        <button className="flex w-36 cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-300 bg-white py-2">
+        {/* <button className="flex w-36 cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-300 bg-white py-2">
           <FiFacebook className="size-6" />
           Facebook
-        </button>
+        </button> */}
       </div>
     </div>
   );

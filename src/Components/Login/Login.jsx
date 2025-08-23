@@ -2,9 +2,11 @@ import { useState } from "react";
 import LoginFom from "../../UI/LoginFom";
 import Option from "../../UI/Option";
 import Welcome from "../../UI/Welcome";
+import { useNavigate } from "react-router";
 
 const Login = ({ screen, setScreen }) => {
   const [error, setError] = useState();
+  const naviagate = useNavigate();
   return (
     <div>
       <Welcome screen={screen} setScreen={setScreen} />
@@ -12,7 +14,15 @@ const Login = ({ screen, setScreen }) => {
       <Option error={error} setError={setError} />
       <p className="w-full text-center text-gray-400">
         Dont have an account?{" "}
-        <span className="cursor-pointer font-bold text-black">Sign up</span>
+        <button
+          className="cursor-pointer font-bold text-black"
+          onClick={() => {
+            naviagate("/register");
+            setScreen("Register");
+          }}
+        >
+          Sign up
+        </button>
       </p>
     </div>
   );
