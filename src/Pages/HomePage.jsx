@@ -5,12 +5,12 @@ import { useEffect } from "react";
 const HomePage = () => {
    const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   const timer = setTimeout(() => {
-  //     navigate("/role");
-  //   }, 3000);
-  //   return () => clearTimeout(timer);
-  // }, [navigate]);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      navigate("/role");
+    }, 3000);
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
