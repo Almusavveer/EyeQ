@@ -6,11 +6,11 @@ import { useNavigate } from "react-router";
 
 const ExamBuilderForm = () => {
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const [date, setDate] = useState("2025-03-22");
+  const [time, setTime] = useState("01:30");
   const [duration, setDuration] = useState("");
   const fileInputRef = useRef(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleDivClick = () => {
     fileInputRef.current.click();
@@ -31,14 +31,12 @@ const ExamBuilderForm = () => {
         examTitle: title,
         examTime: examDateTs,
         examDuration: duration,
-        createdAt: Timestamp.now()
-      })
+        createdAt: Timestamp.now(),
+      });
 
       console.log("Exam Created");
-      
     } catch (error) {
-        console.log(error.message);
-        
+      console.log(error.message);
     }
     console.log(title, date, time, duration);
     setTime("");
@@ -49,7 +47,7 @@ const ExamBuilderForm = () => {
   return (
     <form
       action=""
-      className="flex h-fit gap-5 w-full flex-col justify-between"
+      className="flex h-fit w-full flex-col justify-between gap-5"
       onSubmit={handleSubmit}
     >
       <div className="mt-4 flex h-22 w-full flex-col items-start justify-around">
@@ -62,18 +60,18 @@ const ExamBuilderForm = () => {
           placeholder="Maths test"
         />
       </div>
+      <div className="flex h-22 w-full flex-col items-start justify-around">
+        <h1 className="text-lg font-semibold">Exam Date</h1>
+        <input
+          type="date"
+          value={date}
+          onChange={({ target }) => setDate(target.value)}
+          className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+          placeholder="Maths test"
+        />
+      </div>
       <div className="flex w-full items-center justify-between">
         <div className="flex h-22 w-44 flex-col items-start justify-around">
-          <h1 className="text-lg font-semibold">Exam Date</h1>
-          <input
-            type="date"
-            value={date}
-            onChange={({ target }) => setDate(target.value)}
-            className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
-            placeholder="Maths test"
-          />
-        </div>
-        <div className="flex h-22 w-32 flex-col items-start justify-around">
           <h1 className="text-lg font-semibold">Exam Time</h1>
           <input
             type="time"
@@ -83,17 +81,18 @@ const ExamBuilderForm = () => {
             placeholder="Maths test"
           />
         </div>
+        <div className="flex h-22 w-36 flex-col items-start justify-around">
+          <h1 className="text-lg font-semibold">Exam Duration</h1>
+          <input
+            type="text"
+            value={duration}
+            onChange={({ target }) => setDuration(target.value)}
+            className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+            placeholder="120 min"
+          />
+        </div>
       </div>
-      <div className="flex h-22 w-full flex-col items-start justify-around">
-        <h1 className="text-lg font-semibold">Exam Duration</h1>
-        <input
-          type="text"
-          value={duration}
-          onChange={({ target }) => setDuration(target.value)}
-          className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
-          placeholder="Maths test"
-        />
-      </div>
+
       <div
         className="flex h-48 w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-md border-3 border-dashed border-[#cccccc] bg-[#f0f0f0f0]"
         onClick={handleDivClick}
@@ -107,10 +106,13 @@ const ExamBuilderForm = () => {
         />
         <p>Drop your PDF here, or Browse</p>
       </div>
-      <button className="h-12 w-full cursor-pointer rounded-full bg-yellow-400 py-2 text-lg font-bold" onClick={() => {
-        navigate("/review")
-      }}>
-        Create Exam
+      <button
+        className="h-12 w-full cursor-pointer rounded-full bg-yellow-400 py-2 text-lg font-bold"
+        onClick={() => {
+          navigate("/review");
+        }}
+      >
+        Save & Continue
       </button>
     </form>
   );
