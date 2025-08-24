@@ -5,12 +5,12 @@ import { useEffect } from "react";
 const HomePage = () => {
    const navigate = useNavigate();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      navigate("/role");
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, [navigate]);
+  // useEffect(() => {
+  //   const timer = setTimeout(() => {
+  //     navigate("/role");
+  //   }, 3000);
+  //   return () => clearTimeout(timer);
+  // }, [navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white">
@@ -33,6 +33,21 @@ const HomePage = () => {
       >
         Welcome to <br /> EyeQ
       </motion.h1>
+
+      <motion.p
+        className="text-md text-center text-gray-400 mt-10"
+        transition={{ duration: 1, delay: 0.3 }}
+      >
+        Breaking barriers, building futures - an exam system designed for every learner.
+        <br /> 
+       
+      </motion.p>
+      <motion.p
+        className="text-md text-center font-bold text-blue-500 mt-2"
+        transition={{ duration: 1, delay: 0.3 }}
+      >
+        Hear, respond, and succeed with confidence
+      </motion.p>
     </div>
   );
 };
