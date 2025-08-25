@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { QUESTIONS } from "../data";
 import Question from "../UI/Question";
 import SpeechButton from "../UI/SpeechButton";
@@ -12,7 +12,6 @@ const ExamPage = () => {
   const [answers, setAnswers] = useState([]);
   const [pendingAnswer, setPendingAnswer] = useState(null);
   const [finished, setFinished] = useState(false);
-  const q = questions[current];
 
   useEffect(() => {
     if (!finished && questions[current]) speakQuestion(questions[current]);
@@ -22,7 +21,7 @@ const ExamPage = () => {
   const speakQuestion = (q) => {
     if (!q) return;
     const u = new SpeechSynthesisUtterance(
-      `${q.text}. Options are: ${q.options.join(", ")}`
+      `${q.text}. Options are: ${q.options.join(", ")}`,
     );
     window.speechSynthesis.speak(u);
   };
@@ -39,7 +38,7 @@ const ExamPage = () => {
       if (n === 2) keys.push("second");
       if (n === 3) keys.push("third");
       if (n === 4) keys.push("fourth");
-      if (keys.some(k => ans.includes(k))) match = opt;
+      if (keys.some((k) => ans.includes(k))) match = opt;
     });
 
     return match || speech;
@@ -80,17 +79,19 @@ const ExamPage = () => {
   if (finished) {
     return <Result answers={answers} questions={questions} />;
   }
+  console.log(current);
 
+  const q = questions[current];
   return (
     <div className="flex h-full w-full flex-col gap-10 bg-gray-50">
-      <div className=" flex flex-col">
+      <div className="flex flex-col">
         <h1 className="text-3xl font-bold text-gray-600">Exam</h1>
         <p className="text-gray-400">{questions.length} questions</p>
       </div>
-      <div className="scrollbar flex w-full gap-5 overflow-auto h-20">
+      <div className="scrollbar flex h-20 w-full gap-5 overflow-auto">
         {questions.map((_, index) => (
           <div
-            className="flex w-8 h-8 items-center justify-center rounded-full bg-[#FBC02D] p-2 text-xl font-bold text-white"
+            className={`flex h-8 w-8 items-center justify-center rounded-full ${current === index ? "bg-[#FBC02D]" : "bg-gray-200"} p-2 text-xl font-bold text-white`}
             key={index}
           >
             {index + 1}
@@ -112,7 +113,7 @@ const ExamPage = () => {
         />
       )}
 
-      <AnswerList answers={answers} />
+      {/* <AnswerList answers={answers} /> */}
     </div>
   );
 };
