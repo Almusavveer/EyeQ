@@ -12,6 +12,7 @@ const ExamPage = () => {
   const [answers, setAnswers] = useState([]);
   const [pendingAnswer, setPendingAnswer] = useState(null);
   const [finished, setFinished] = useState(false);
+  const q = questions[current];
 
   useEffect(() => {
     if (!finished && questions[current]) speakQuestion(questions[current]);
@@ -33,9 +34,7 @@ const ExamPage = () => {
 
     q.options.forEach((opt, idx) => {
       const n = idx + 1;
-      const keys = [
-        `option ${n}`, `choice ${n}`, `${n}`, opt.toLowerCase()
-      ];
+      const keys = [`option ${n}`, `choice ${n}`, `${n}`, opt.toLowerCase()];
       if (n === 1) keys.push("first");
       if (n === 2) keys.push("second");
       if (n === 3) keys.push("third");
@@ -61,7 +60,10 @@ const ExamPage = () => {
 
   const confirmAnswer = () => {
     const q = questions[current];
-    const nextAnswers = [...answers, { question: q.text, answer: pendingAnswer }];
+    const nextAnswers = [
+      ...answers,
+      { question: q.text, answer: pendingAnswer },
+    ];
     setAnswers(nextAnswers);
     setPendingAnswer(null);
 
@@ -79,12 +81,22 @@ const ExamPage = () => {
     return <Result answers={answers} questions={questions} />;
   }
 
-  const q = questions[current];
-
   return (
-    <div>
-      <h2>Exam</h2>
-
+    <div className="flex h-full w-full flex-col gap-10 bg-gray-50">
+      <div className=" flex flex-col">
+        <h1 className="text-3xl font-bold text-gray-600">Exam</h1>
+        <p className="text-gray-400">{questions.length} questions</p>
+      </div>
+      <div className="scrollbar flex w-full gap-5 overflow-auto h-20">
+        {questions.map((_, index) => (
+          <div
+            className="flex w-8 h-8 items-center justify-center rounded-full bg-[#FBC02D] p-2 text-xl font-bold text-white"
+            key={index}
+          >
+            {index + 1}
+          </div>
+        ))}
+      </div>
       {q && !pendingAnswer && (
         <>
           <Question text={q.text} options={q.options} />

@@ -36,6 +36,8 @@ const HomePage = () => {
 
       <motion.p
         className="text-md text-center text-gray-400 mt-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.3 }}
       >
         Breaking barriers, building futures - an exam system designed for every learner.
@@ -44,6 +46,8 @@ const HomePage = () => {
       </motion.p>
       <motion.p
         className="text-md text-center font-bold text-blue-500 mt-2"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.3 }}
       >
         Hear, respond, and succeed with confidence
