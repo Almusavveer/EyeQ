@@ -9,18 +9,18 @@
       "src": "Client/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "build"
+        "distDir": "dist"
       }
     }
   ],
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/app.py"
+      "destination": "/Server/app.py"
     },
     {
       "source": "/(.*)",
-      "destination": "/Client/build/index.html"
+      "destination": "/Client/dist/index.html"
     }
   ],
   "headers": [
