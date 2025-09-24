@@ -19,8 +19,13 @@ const PdfUpload = ({
     const formData = new FormData();
     formData.append('file', file);
 
+    // Use production API URL when deployed, localhost for development
+    const apiUrl = process.env.NODE_ENV === 'production' 
+      ? '/api/upload' 
+      : 'http://127.0.0.1:5000/api/upload';
+
     try {
-      const response = await fetch('http://127.0.0.1:5000/api/upload', {
+      const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData,
       });

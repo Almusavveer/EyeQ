@@ -6,36 +6,32 @@
       "use": "@vercel/python"
     },
     {
-      "src": "Client/package.json",
+      "src": "Client/package.json", 
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist"
       }
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "/Server/app.py"
+      "src": "/api/(.*)",
+      "dest": "/Server/app.py"
     },
     {
-      "source": "/(.*)",
-      "destination": "/Client/dist/index.html"
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json))",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/Client/dist/index.html"
     }
   ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "Cross-Origin-Opener-Policy",
-          "value": "same-origin-allow-popups"
-        },
-        {
-          "key": "Cross-Origin-Embedder-Policy",
-          "value": "unsafe-none"
-        }
-      ]
+  "functions": {
+    "Server/app.py": {
+      "runtime": "python3.9"
     }
-  ]
+  }
 }
