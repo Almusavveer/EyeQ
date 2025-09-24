@@ -1,10 +1,12 @@
 import { useContext } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 
-const Welcome = ({ screen, setScreen }) => {
+const Welcome = () => {
   const naviagate = useNavigate();
+  const location = useLocation();
+  const screen = location.pathname === "/login" ? "Login" : "Register";
+  
   const handleChnage = (name) => {
-    setScreen(name);
     name === "Login" ? naviagate("/login") : naviagate("/register");
   };
 
@@ -56,7 +58,6 @@ const Welcome = ({ screen, setScreen }) => {
                 className="cursor-pointer font-bold text-black"
                 onClick={() => {
                   naviagate("/login");
-                  setScreen("Login");
                 }}
               >
                 Log in

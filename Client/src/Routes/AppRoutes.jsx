@@ -3,14 +3,12 @@ import Login from "../Components/Login/Login";
 import Register from "../Components/Register/Register";
 import Home from "../Pages/Home";
 import HomePage from "../Pages/HomePage";
-import { useState } from "react";
 import ExamBuilder from "../Pages/ExamBuilder";
 import ReviewEdit from "../Pages/ReviewEdit";
 import Role from "../Pages/Role";
 import ExamPage from "../Pages/ExamPage";
 
 const AppRoutes = () => {
-  const [screen, setScreen] = useState("Login");
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
@@ -18,14 +16,15 @@ const AppRoutes = () => {
       <Route path="/exam" element={<ExamPage />} />
       <Route
         path="/login"
-        element={<Login screen={screen} setScreen={setScreen} />}
+        element={<Login />}
       />
       <Route
         path="/register"
-        element={<Register screen={screen} setScreen={setScreen} />}
+        element={<Register />}
       />
       <Route path="/home" element={<Home />} />
       <Route path="/exambuilder" element={<ExamBuilder />} />
+      <Route path="/review/:examId" element={<ReviewEdit />} />
       <Route path="/review" element={<ReviewEdit />} />
     </Routes>
   );

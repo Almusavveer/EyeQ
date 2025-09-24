@@ -22,18 +22,21 @@ const RegisterFom = ({error, setError}) => {
         password,
       );
       const user = userCredential.user;
+      
+      // Create user document with proper fields
       await setDoc(doc(db, "users", user.uid), {
         uid: user.uid,
-        email,
+        email: email,
+        name: name,
         role: 'teacher',
         createdAt: serverTimestamp(),
       });
 
-      navigate("/home", {replace: true}); // redirect to login
-      // console.log("successfull");
+      navigate("/home", {replace: true}); 
       
     } catch (err) {
-      setError("Looks like this email is already in use. Want to log in instead?");
+      console.error("Registration error:", err.message);
+      setError(err.message);
     }
   };
   return (
