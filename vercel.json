@@ -2,11 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "Server/app.py",
-      "use": "@vercel/python"
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb"
+      }
     },
     {
-      "src": "Client/package.json", 
+      "src": "Client/package.json",
       "use": "@vercel/static-build",
       "config": {
         "distDir": "dist"
@@ -16,10 +19,10 @@
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "/Server/app.py"
+      "dest": "/api/index.py"
     },
     {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json))",
+      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|json|txt))",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
       }
@@ -30,8 +33,9 @@
     }
   ],
   "functions": {
-    "Server/app.py": {
-      "runtime": "python3.9"
+    "api/index.py": {
+      "runtime": "python3.9",
+      "maxDuration": 30
     }
   }
 }

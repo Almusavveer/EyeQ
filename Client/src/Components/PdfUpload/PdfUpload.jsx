@@ -35,8 +35,18 @@ const PdfUpload = ({
         throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
-      const extractedQuestions = await response.json();
-      return extractedQuestions;
+      const result = await response.json();
+      
+      // Handle the new API response format
+      if (result.questions) {
+        return result.questions;
+      } else if (result.length && Array.isArray(result)) {
+        // Backward compatibility with old format
+        return result;
+      } else {
+        // Handle case where no questions were found
+        return [];
+      }
     } catch (error) {
       console.error('PDF upload failed:', error);
       throw error;
