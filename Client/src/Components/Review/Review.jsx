@@ -7,14 +7,16 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import { db } from "../../firebase";
+import { db, auth } from "../../firebase";
 import { useNavigate, useParams, useLocation } from "react-router";
+import { useAuthState } from "react-firebase-hooks/auth";
 import { FiLoader } from "react-icons/fi";
 
 const Review = () => {
   const { examId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [user] = useAuthState(auth);
 
   const [examData, setExamData] = useState(null);
   const [loading, setLoading] = useState(true);

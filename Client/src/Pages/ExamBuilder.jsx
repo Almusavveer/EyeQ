@@ -56,7 +56,7 @@ const ExamBuilder = () => {
   return (
     <div className="flex min-h-screen w-full flex-col items-center p-4 sm:p-6 lg:p-8">
       {/* Mobile: Back Button + Centered Title in Same Line */}
-      <div className="flex items-center justify-between w-full max-w-sm sm:max-w-md lg:max-w-2xl mt-4 mb-6 sm:hidden relative">
+      <div className="flex items-center justify-between w-full max-w-sm sm:max-w-md lg:max-w-2xl mt-4 mb-1 sm:hidden relative">
         <button
           type="button"
           onClick={() => {

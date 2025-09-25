@@ -37,7 +37,8 @@ const PublishStep = ({ examData, onPrev }) => {
         createdAt: new Date(),
       };
 
-      // Save to Firebase
+      // Save to Firebase with proper organization
+      // For sharing, we keep examDetails but add better organization
       const docRef = await addDoc(collection(db, "examDetails"), publishData);
       
       // Generate shareable link

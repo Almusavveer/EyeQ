@@ -5,7 +5,7 @@ import { useAuth } from "../Context/AuthContext";
 import { db } from "../firebase";
 import Nav from "../Components/Home/Nav";
 import Card from "../UI/Card";
-import { FiPlus, FiLoader } from "react-icons/fi";
+import { FiPlus, FiLoader, FiUsers } from "react-icons/fi";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -24,7 +24,8 @@ const Home = () => {
         const examsRef = collection(db, "examDetails");
         const q = query(
           examsRef,
-          where("createdBy", "==", user.uid)
+          where("createdBy", "==", user.uid),
+          orderBy("createdAt", "desc")
         );
         
         const querySnapshot = await getDocs(q);
@@ -76,13 +77,25 @@ const Home = () => {
   return (
     <div className="flex h-fit gap-3 sm:gap-5 flex-col p-2 sm:p-0">
       <Nav />
-      <button
-        className="w-full font-bold cursor-pointer rounded-lg bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 py-3 sm:py-4 transition-colors duration-200 touch-manipulation text-sm sm:text-base"
-        onClick={() => navigate("/exambuilder")}
-      >
-        <FiPlus className="inline w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-        Create New Exam
-      </button>
+      
+      {/* Action Buttons */}
+      <div className="space-y-3">
+        <button
+          className="w-full font-bold cursor-pointer rounded-lg bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 py-3 sm:py-4 transition-colors duration-200 touch-manipulation text-sm sm:text-base"
+          onClick={() => navigate("/exambuilder")}
+        >
+          <FiPlus className="inline w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+          Create New Exam
+        </button>
+        
+        <button
+          className="w-full font-bold cursor-pointer rounded-lg bg-blue-500 hover:bg-blue-600 active:bg-blue-700 text-white py-3 sm:py-4 transition-colors duration-200 touch-manipulation text-sm sm:text-base"
+          onClick={() => navigate("/students")}
+        >
+          <FiUsers className="inline w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+          Manage Students
+        </button>
+      </div>
       
       <div className="flex h-[80vh] sm:h-[80%] flex-col gap-3 sm:gap-4 overflow-y-auto px-1">
         {loading ? (
