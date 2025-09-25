@@ -9,7 +9,13 @@ import traceback
 app = Flask(__name__)
 
 # Configure CORS with specific settings for production
-CORS(app, origins=["https://eye-q-black.vercel.app", "http://localhost:5174", "http://127.0.0.1:5174"])
+CORS(app, origins=[
+    "https://eye-q-black.vercel.app", 
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173",
+    "http://localhost:5174", 
+    "http://127.0.0.1:5174"
+])
 
 def extract_questions_from_pdf(pdf_file_stream):
     """

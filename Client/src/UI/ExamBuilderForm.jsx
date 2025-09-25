@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { useAuthState } from "react-firebase-hooks/auth";
 import PdfUpload from "../Components/PdfUpload";
 
-const ExamBuilderForm = () => {
+const ExamBuilderForm = ({ onNext }) => {
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState("01:30");
@@ -69,7 +69,7 @@ const ExamBuilderForm = () => {
     }
     
     try {
-      // Prepare exam data without saving to Firebase yet
+      // Prepare exam data
       const finalDate = new Date(`${date}T${time}:00`);
       
       const examData = {
@@ -83,15 +83,10 @@ const ExamBuilderForm = () => {
         uploadedFileName: uploadedFileName
       };
 
-      console.log("Passing exam data to review:", examData);
+      console.log("Moving to review step with exam data:", examData);
       
-      // Navigate to review page with exam data (no Firebase save yet)
-      navigate("/review", { 
-        state: { 
-          examData,
-          isNewExam: true 
-        } 
-      });
+      // Move to next step instead of navigating to review page
+      onNext(examData);
     } catch (error) {
       console.error("Error preparing exam data:", error.message);
     }
