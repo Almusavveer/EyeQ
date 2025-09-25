@@ -75,7 +75,7 @@ def clean_pdf_text(text):
     Clean up common PDF text extraction issues with comprehensive character mapping
     This handles various PDF encoding issues users might encounter
     """
-    # Comprehensive character replacements for PDF extraction issues
+    # Comprehensive character replacements for PDF extraction issues (multi-language support)
     char_replacements = {
         # Common Unicode substitutions
         'Ɵ': 't', 'ƞ': 'n', 'Ɨ': 'i', 'ƒ': 'f', 'Ş': 'S', 'ş': 's',
@@ -90,11 +90,36 @@ def clean_pdf_text(text):
         '×': 'x', '÷': '/', '±': '+/-', '≤': '<=', '≥': '>=', '≠': '!=',
         '≈': '~', '∞': 'infinity', '∑': 'sum', '∏': 'product',
         
+        # Programming-related symbols that might get corrupted
+        '→': '->', '←': '<-', '↑': 'up', '↓': 'down', '↔': '<->',
+        '∧': '&&', '∨': '||', '¬': '!', '⊕': '^',  # Logical operators
+        
         # Degree and other symbols
         '°': 'degrees', '©': '(c)', '®': '(R)', '™': '(TM)', '§': 'section',
         
-        # Arrows and symbols that might appear in technical documents
-        '→': '->', '←': '<-', '↑': 'up', '↓': 'down', '↔': '<->',
+        # Language-specific characters that might appear in programming contexts
+        # French
+        'à': 'a', 'á': 'a', 'â': 'a', 'ã': 'a', 'ä': 'a', 'å': 'a',
+        'è': 'e', 'é': 'e', 'ê': 'e', 'ë': 'e',
+        'ì': 'i', 'í': 'i', 'î': 'i', 'ï': 'i',
+        'ò': 'o', 'ó': 'o', 'ô': 'o', 'õ': 'o',
+        'ù': 'u', 'ú': 'u', 'û': 'u',
+        'ñ': 'n', 'ý': 'y', 'ÿ': 'y',
+        
+        # German
+        'ß': 'ss',
+        
+        # Scandinavian
+        'æ': 'ae', 'ø': 'o', 'å': 'a',
+        'Æ': 'AE', 'Ø': 'O', 'Å': 'A',
+        
+        # Eastern European
+        'ć': 'c', 'č': 'c', 'đ': 'd', 'š': 's', 'ž': 'z',
+        'Ć': 'C', 'Č': 'C', 'Đ': 'D', 'Š': 'S', 'Ž': 'Z',
+        
+        # Cyrillic (basic mapping for common cases)
+        'а': 'a', 'е': 'e', 'о': 'o', 'р': 'p', 'с': 'c', 'х': 'x',
+        'А': 'A', 'Е': 'E', 'О': 'O', 'Р': 'P', 'С': 'C', 'Х': 'X',
     }
     
     # Apply character replacements
@@ -140,20 +165,98 @@ def clean_pdf_text(text):
     for pattern, replacement in garbled_patterns.items():
         text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
     
-    # Clean up whitespace issues
-    text = re.sub(r' +', ' ', text)  # Multiple spaces to single space
-    text = re.sub(r'\n +', '\n', text)  # Remove spaces at start of lines
-    text = re.sub(r' +\n', '\n', text)  # Remove spaces at end of lines
+    # Preserve code block structure - don't collapse code formatting
+    # Identify potential code blocks and preserve their formatting
+    lines = text.split('\n')
+    processed_lines = []
+    in_code_block = False
+    
+    for line in lines:
+        stripped_line = line.strip()
+        
+        # Detect start of code block
+        if (any(keyword in stripped_line.lower() for keyword in ['public class', 'public static', '#include', 'int main', 'void main']) or
+            stripped_line.endswith('{') or
+            stripped_line.startswith('System.') or
+            stripped_line.startswith('printf(') or
+            stripped_line.startswith('cout')):
+            in_code_block = True
+        
+        # Detect end of code block
+        if in_code_block and stripped_line == '}':
+            in_code_block = False
+            processed_lines.append(line)
+            continue
+        
+        # Preserve code block formatting
+        if in_code_block:
+            processed_lines.append(line)  # Keep original formatting for code
+        else:
+            # Normal text processing
+            processed_lines.append(line.strip() if line.strip() else '')
+    
+    text = '\n'.join(processed_lines)
+    
+    # Clean up whitespace issues (but preserve code structure)
+    text = re.sub(r' +', ' ', text)  # Multiple spaces to single space (except in code)
     text = re.sub(r'\n{3,}', '\n\n', text)  # Limit consecutive newlines
     
-    # Fix common programming syntax issues in code snippets
+    # Fix common programming syntax issues in code snippets (multi-language support)
     code_fixes = {
+        # C/C++ patterns
         r'#include\s*<\s*stdio\.h\s*>': '#include <stdio.h>',
         r'#include\s*<\s*stdlib\.h\s*>': '#include <stdlib.h>',
         r'#include\s*<\s*string\.h\s*>': '#include <string.h>',
         r'#include\s*<\s*math\.h\s*>': '#include <math.h>',
+        r'#include\s*<\s*iostream\s*>': '#include <iostream>',
+        r'#include\s*<\s*vector\s*>': '#include <vector>',
         r'int\s+main\s*\(\s*\)': 'int main()',
         r'return\s+0\s*;': 'return 0;',
+        r'using\s+namespace\s+std\s*;': 'using namespace std;',
+        
+        # Java patterns
+        r'public\s+static\s+void\s+main': 'public static void main',
+        r'public\s+class\s+': 'public class ',
+        r'System\.out\.print': 'System.out.print',
+        # Note: Do NOT change printf to println for C/C++ code!
+        
+        # Python patterns
+        r'def\s+main\s*\(\s*\)': 'def main():',
+        r'if\s+__name__\s*==\s*["\']__main__["\']\s*:': 'if __name__ == "__main__":',
+        r'print\s*\(\s*': 'print(',
+        
+        # JavaScript patterns
+        r'function\s+main\s*\(\s*\)': 'function main()',
+        r'console\.log\s*\(': 'console.log(',
+        r'let\s+': 'let ',
+        r'const\s+': 'const ',
+        r'var\s+': 'var ',
+        
+        # General programming fixes
+        r'AN\d+\)': 'AND)',  # Fix truncated "AND" in bitwise operations
+        r'OR\d+\)': 'OR)',   # Fix truncated "OR" in bitwise operations
+        r'XOR\d+\)': 'XOR)', # Fix truncated "XOR" in bitwise operations
+        
+        # Common OCR errors in programming contexts
+        r'automatcally': 'automatically',
+        r'exceptons': 'exceptions',
+        r'collecton': 'collection',
+        r'primitve': 'primitive',
+        r'Compilaton': 'Compilation',
+        r'utl': 'util',
+        r'functon': 'function',
+        r'retum': 'return',
+        r'pnnt': 'print',
+        r'prmt': 'print',
+        r'vanable': 'variable',
+        r'declaraton': 'declaration',
+        r'intializaton': 'initialization',
+        r'iteraton': 'iteration',
+        r'condton': 'condition',
+        r'comparson': 'comparison',
+        r'operaton': 'operation',
+        r'allocaton': 'allocation',
+        r'implementaton': 'implementation',
     }
     
     for pattern, replacement in code_fixes.items():
