@@ -3,12 +3,14 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
 import { useNavigate } from "react-router";
+import PasswordReset from "../Components/PasswordReset";
 
 const LoginFom = () => {
   const [show, setShow] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -69,7 +71,13 @@ const LoginFom = () => {
             <input type="checkbox" name="" id="remember" className="w-4 h-4" /> 
             <span className="text-sm text-gray-600">Remember Me</span>
           </label>
-          <span className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200 touch-manipulation">Forgot Password?</span>
+          <button
+            type="button"
+            onClick={() => setShowPasswordReset(true)}
+            className="cursor-pointer text-sm text-gray-500 hover:text-gray-700 transition-colors duration-200 touch-manipulation"
+          >
+            Forgot Password?
+          </button>
         </div>
         <button 
           type="submit"
@@ -82,6 +90,13 @@ const LoginFom = () => {
         <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
           <p className="text-red-600 text-sm sm:text-base">{error}</p>
         </div>
+      )}
+      
+      {showPasswordReset && (
+        <PasswordReset
+          email={email}
+          onClose={() => setShowPasswordReset(false)}
+        />
       )}
     </div>
   );

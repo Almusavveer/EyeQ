@@ -280,34 +280,35 @@ const Review = () => {
           />
         </div>
 
-        <div className="flex h-22 w-full flex-col items-start justify-around">
-          <h3 className="text-lg font-semibold">Exam Date</h3>
+        <div className="flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
+          <h3 className="text-base sm:text-lg font-semibold">Exam Date</h3>
           <input
             type="date"
             value={editDate}
             onChange={(e) => setEditDate(e.target.value)}
-            className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+            className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 text-sm sm:text-base outline-none"
           />
         </div>
 
-        <div className="flex w-full items-center justify-between gap-4">
-          <div className="flex h-22 flex-1 flex-col items-start justify-around">
-            <h3 className="text-lg font-semibold">Exam Time</h3>
+        <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:items-end">
+          <div className="flex-1">
+            <h3 className="text-base sm:text-lg font-semibold mb-2">Exam Time</h3>
             <input
               type="time"
               value={editTime}
               onChange={(e) => setEditTime(e.target.value)}
-              className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+              className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 sm:p-3 text-base sm:text-base outline-none focus:ring-2 focus:ring-yellow-200"
             />
           </div>
-          <div className="flex h-22 flex-1 flex-col items-start justify-around">
-            <h3 className="text-lg font-semibold">Duration (minutes)</h3>
+          <div className="flex-1">
+            <h3 className="text-base sm:text-lg font-semibold mb-2">Duration (minutes)</h3>
             <input
-              type="text"
+              type="number"
               value={editDuration}
               onChange={(e) => setEditDuration(e.target.value)}
-              className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+              className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 sm:p-3 text-base sm:text-base outline-none focus:ring-2 focus:ring-yellow-200"
               placeholder="120"
+              min="1"
             />
           </div>
         </div>

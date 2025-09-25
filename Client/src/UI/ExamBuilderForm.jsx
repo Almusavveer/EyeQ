@@ -97,6 +97,7 @@ const ExamBuilderForm = ({ onNext }) => {
       className="flex h-fit w-full flex-col justify-between gap-3 sm:gap-5 p-2 sm:p-0"
       onSubmit={handleSubmit}
     >
+
       <div className="mt-2 sm:mt-4 flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
         <h1 className="text-base sm:text-lg font-semibold">Exam Title</h1>
         <input
@@ -147,12 +148,30 @@ const ExamBuilderForm = ({ onNext }) => {
         className="w-full"
       />
 
+      {/* Mobile: Single Save & Continue Button */}
       <button
         type="submit"
-        className="h-12 sm:h-14 w-full cursor-pointer rounded-full bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 py-2 text-base sm:text-lg font-bold transition-colors duration-200 touch-manipulation"
+        className="block sm:hidden h-12 w-full cursor-pointer rounded-full bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 py-2 text-base font-bold transition-colors duration-200 touch-manipulation"
       >
         Save & Continue
       </button>
+
+      {/* Desktop: Back to Dashboard + Save & Continue Buttons */}
+      <div className="hidden sm:flex flex-row w-full gap-4">
+        <button
+          type="button"
+          onClick={() => navigate("/home")}
+          className="flex-1 h-12 sm:h-14 cursor-pointer rounded-full border-2 border-gray-300 py-2 text-base sm:text-lg font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors duration-200 touch-manipulation"
+        >
+          Back to Dashboard
+        </button>
+        <button
+          type="submit"
+          className="flex-1 h-12 sm:h-14 cursor-pointer rounded-full bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 py-2 text-base sm:text-lg font-bold transition-colors duration-200 touch-manipulation"
+        >
+          Save & Continue
+        </button>
+      </div>
     </form>
   );
 };

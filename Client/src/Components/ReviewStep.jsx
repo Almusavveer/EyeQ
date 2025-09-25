@@ -62,7 +62,7 @@ const ReviewStep = ({ examData, onNext, onPrev }) => {
       {/* Exam Details Section */}
       <div className="mt-2 sm:mt-4 flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
         <h1 className="text-base sm:text-lg font-semibold">Review Your Exam</h1>
-        <p className="text-xs sm:text-sm text-gray-600">
+        <p className="text-sm sm:text-base text-gray-600">
           Please review your exam details before publishing
         </p>
       </div>
@@ -90,24 +90,25 @@ const ReviewStep = ({ examData, onNext, onPrev }) => {
             />
           </div>
 
-          <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-0 sm:items-center sm:justify-between">
-            <div className="flex h-fit sm:h-22 w-full sm:w-44 flex-col items-start justify-around gap-2">
-              <h1 className="text-base sm:text-lg font-semibold">Exam Time</h1>
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:items-end">
+            <div className="flex-1">
+              <h1 className="text-base sm:text-lg font-semibold mb-2">Exam Time</h1>
               <input
                 type="time"
                 value={editData.examTime}
                 onChange={(e) => setEditData({ ...editData, examTime: e.target.value })}
-                className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 text-sm sm:text-base outline-none"
+                className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 sm:p-3 text-base sm:text-base outline-none focus:ring-2 focus:ring-yellow-200"
               />
             </div>
-            <div className="flex h-fit sm:h-22 w-full sm:w-36 flex-col items-start justify-around gap-2">
-              <h1 className="text-base sm:text-lg font-semibold">Duration</h1>
+            <div className="flex-1">
+              <h1 className="text-base sm:text-lg font-semibold mb-2">Duration (minutes)</h1>
               <input
-                type="text"
+                type="number"
                 value={editData.examDuration}
                 onChange={(e) => setEditData({ ...editData, examDuration: e.target.value })}
-                className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 text-sm sm:text-base outline-none"
-                placeholder="120 min"
+                className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 sm:p-3 text-base sm:text-base outline-none focus:ring-2 focus:ring-yellow-200"
+                placeholder="120"
+                min="1"
               />
             </div>
           </div>
@@ -143,14 +144,20 @@ const ReviewStep = ({ examData, onNext, onPrev }) => {
           <div className="flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
             <h1 className="text-base sm:text-lg font-semibold">Exam Date</h1>
             <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 bg-gray-50 text-sm sm:text-base break-words">
-              {formatDate(examData?.examDate)}
+              {examData?.examDate ? new Date(examData.examDate).toLocaleDateString() : "Not set"}
             </div>
           </div>
 
-          {/* Duration Display */}
-          <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-0 sm:items-center sm:justify-between">
-            <div className="flex h-fit sm:h-22 w-full sm:w-44 flex-col items-start justify-around gap-2">
-              <h1 className="text-base sm:text-lg font-semibold">Duration</h1>
+          {/* Exam Time and Duration Display */}
+          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:items-end">
+            <div className="flex-1">
+              <h1 className="text-base sm:text-lg font-semibold mb-2">Exam Time</h1>
+              <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 bg-gray-50 text-sm sm:text-base">
+                {examData?.examDate ? new Date(examData.examDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Not set"}
+              </div>
+            </div>
+            <div className="flex-1">
+              <h1 className="text-base sm:text-lg font-semibold mb-2">Duration (minutes)</h1>
               <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 bg-gray-50 text-sm sm:text-base">
                 {examData?.examDuration} min
               </div>
@@ -213,14 +220,14 @@ const ReviewStep = ({ examData, onNext, onPrev }) => {
       <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-4">
         <button
           onClick={onPrev}
-          className="flex-1 h-12 sm:h-14 cursor-pointer rounded-full border-2 border-gray-300 text-gray-700 font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors duration-200 touch-manipulation text-sm sm:text-base"
+          className="hidden sm:flex flex-1 h-12 sm:h-14 cursor-pointer rounded-full border-2 border-gray-300 text-gray-700 font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors duration-200 touch-manipulation text-base sm:text-lg items-center justify-center"
         >
           Back to Form
         </button>
         <button
           onClick={handleContinue}
           disabled={isEditing}
-          className="flex-1 h-12 sm:h-14 cursor-pointer rounded-full bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black font-bold transition-colors duration-200 disabled:opacity-50 touch-manipulation text-sm sm:text-base"
+          className="flex flex-1 h-12 sm:h-14 items-center justify-center cursor-pointer rounded-full bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 py-2 text-base sm:text-lg font-bold transition-colors duration-200 disabled:opacity-50 touch-manipulation"
         >
           Continue to Publish
         </button>
