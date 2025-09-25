@@ -13,12 +13,12 @@ const HomePage = () => {
   }, [navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-white">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4">
 
       <motion.img
         src="/image-10.png" 
         alt="EyeQ Logo"
-        className=" mb-6"
+        className="w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 mb-4 sm:mb-6"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 1 }}
@@ -26,7 +26,7 @@ const HomePage = () => {
 
       {/* Title with animation */}
       <motion.h1
-        className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent text-center"
+        className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent text-center"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.3 }}
@@ -35,7 +35,7 @@ const HomePage = () => {
       </motion.h1>
 
       <motion.p
-        className="text-md text-center text-gray-400 mt-10"
+        className="text-sm sm:text-md lg:text-lg text-center text-gray-400 mt-6 sm:mt-10 max-w-md sm:max-w-lg lg:max-w-2xl"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.3 }}
@@ -45,7 +45,7 @@ const HomePage = () => {
        
       </motion.p>
       <motion.p
-        className="text-md text-center font-bold text-blue-500 mt-2"
+        className="text-sm sm:text-md lg:text-lg text-center font-bold text-blue-500 mt-2"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 1, delay: 0.3 }}

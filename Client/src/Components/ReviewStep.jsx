@@ -58,71 +58,71 @@ const ReviewStep = ({ examData, onNext, onPrev }) => {
   };
 
   return (
-    <div className="flex h-fit w-full flex-col justify-between gap-5">
+    <div className="flex h-fit w-full flex-col justify-between gap-3 sm:gap-5 p-2 sm:p-0">
       {/* Exam Details Section */}
-      <div className="mt-4 flex h-22 w-full flex-col items-start justify-around">
-        <h1 className="text-lg font-semibold">Review Your Exam</h1>
-        <p className="text-sm text-gray-600">
+      <div className="mt-2 sm:mt-4 flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
+        <h1 className="text-base sm:text-lg font-semibold">Review Your Exam</h1>
+        <p className="text-xs sm:text-sm text-gray-600">
           Please review your exam details before publishing
         </p>
       </div>
 
       {/* Exam Details Form */}
       {isEditing ? (
-        <div className="space-y-5">
-          <div className="flex h-22 w-full flex-col items-start justify-around">
-            <h1 className="text-lg font-semibold">Exam Title</h1>
+        <div className="space-y-3 sm:space-y-5">
+          <div className="flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
+            <h1 className="text-base sm:text-lg font-semibold">Exam Title</h1>
             <input
               type="text"
               value={editData.examTitle}
               onChange={(e) => setEditData({ ...editData, examTitle: e.target.value })}
-              className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+              className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 text-sm sm:text-base outline-none"
             />
           </div>
           
-          <div className="flex h-22 w-full flex-col items-start justify-around">
-            <h1 className="text-lg font-semibold">Exam Date</h1>
+          <div className="flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
+            <h1 className="text-base sm:text-lg font-semibold">Exam Date</h1>
             <input
               type="date"
               value={editData.examDate}
               onChange={(e) => setEditData({ ...editData, examDate: e.target.value })}
-              className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+              className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 text-sm sm:text-base outline-none"
             />
           </div>
 
-          <div className="flex w-full items-center justify-between">
-            <div className="flex h-22 w-44 flex-col items-start justify-around">
-              <h1 className="text-lg font-semibold">Exam Time</h1>
+          <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-0 sm:items-center sm:justify-between">
+            <div className="flex h-fit sm:h-22 w-full sm:w-44 flex-col items-start justify-around gap-2">
+              <h1 className="text-base sm:text-lg font-semibold">Exam Time</h1>
               <input
                 type="time"
                 value={editData.examTime}
                 onChange={(e) => setEditData({ ...editData, examTime: e.target.value })}
-                className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+                className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 text-sm sm:text-base outline-none"
               />
             </div>
-            <div className="flex h-22 w-36 flex-col items-start justify-around">
-              <h1 className="text-lg font-semibold">Duration</h1>
+            <div className="flex h-fit sm:h-22 w-full sm:w-36 flex-col items-start justify-around gap-2">
+              <h1 className="text-base sm:text-lg font-semibold">Duration</h1>
               <input
                 type="text"
                 value={editData.examDuration}
                 onChange={(e) => setEditData({ ...editData, examDuration: e.target.value })}
-                className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+                className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 text-sm sm:text-base outline-none"
                 placeholder="120 min"
               />
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={handleSaveEdit}
-              className="flex items-center gap-2 h-12 px-6 cursor-pointer rounded-full bg-green-500 hover:bg-green-600 text-white font-bold transition-colors duration-200"
+              className="flex items-center justify-center gap-2 h-12 px-4 sm:px-6 cursor-pointer rounded-full bg-green-500 hover:bg-green-600 active:bg-green-700 text-white font-bold transition-colors duration-200 touch-manipulation text-sm sm:text-base"
             >
               <FiCheck className="h-4 w-4" />
               Save Changes
             </button>
             <button
               onClick={handleCancelEdit}
-              className="flex items-center gap-2 h-12 px-6 cursor-pointer rounded-full bg-gray-500 hover:bg-gray-600 text-white font-bold transition-colors duration-200"
+              className="flex items-center justify-center gap-2 h-12 px-4 sm:px-6 cursor-pointer rounded-full bg-gray-500 hover:bg-gray-600 active:bg-gray-700 text-white font-bold transition-colors duration-200 touch-manipulation text-sm sm:text-base"
             >
               <FiX className="h-4 w-4" />
               Cancel
@@ -130,86 +130,69 @@ const ReviewStep = ({ examData, onNext, onPrev }) => {
           </div>
         </div>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-3 sm:space-y-5">
           {/* Exam Title Display */}
-          <div className="flex h-22 w-full flex-col items-start justify-around">
-            <h1 className="text-lg font-semibold">Exam Title</h1>
-            <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 bg-gray-50">
+          <div className="flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
+            <h1 className="text-base sm:text-lg font-semibold">Exam Title</h1>
+            <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 bg-gray-50 text-sm sm:text-base break-words">
               {examData?.examTitle}
             </div>
           </div>
           
           {/* Exam Date Display */}
-          <div className="flex h-22 w-full flex-col items-start justify-around">
-            <h1 className="text-lg font-semibold">Exam Date</h1>
-            <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 bg-gray-50">
+          <div className="flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
+            <h1 className="text-base sm:text-lg font-semibold">Exam Date</h1>
+            <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 bg-gray-50 text-sm sm:text-base break-words">
               {formatDate(examData?.examDate)}
             </div>
           </div>
 
-          {/* Duration and Creator Display */}
-          <div className="flex w-full items-center justify-between">
-            <div className="flex h-22 w-44 flex-col items-start justify-around">
-              <h1 className="text-lg font-semibold">Duration</h1>
-              <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 bg-gray-50">
+          {/* Duration Display */}
+          <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-0 sm:items-center sm:justify-between">
+            <div className="flex h-fit sm:h-22 w-full sm:w-44 flex-col items-start justify-around gap-2">
+              <h1 className="text-base sm:text-lg font-semibold">Duration</h1>
+              <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 bg-gray-50 text-sm sm:text-base">
                 {examData?.examDuration} min
               </div>
             </div>
-            {/* <div className="flex h-22 w-36 flex-col items-start justify-around">
-              <h1 className="text-lg font-semibold">Created by</h1>
-              <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 bg-gray-50 text-sm">
-                {examData?.creatorEmail}
-              </div>
-            </div> */}
           </div>
-
-          {/* Edit Button */}
-          {/* <div className="flex justify-end">
-            <button
-              onClick={handleEdit}
-              className="flex items-center gap-2 h-12 px-6 cursor-pointer rounded-full bg-blue-500 hover:bg-blue-600 text-white font-bold transition-colors duration-200"
-            >
-              <FiEdit className="h-4 w-4" />
-              Edit Details
-            </button>
-          </div> */}
         </div>
       )}
 
       {/* Questions Summary */}
-      <div className="flex h-fit w-full flex-col items-start justify-around gap-3">
-        <h1 className="text-lg font-semibold">Questions Summary</h1>
+      <div className="flex h-fit w-full flex-col items-start justify-around gap-2 sm:gap-3">
+        <h1 className="text-base sm:text-lg font-semibold">Questions Summary</h1>
         
         {examData?.questions && examData.questions.length > 0 ? (
-          <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3">
-            <div className="flex items-center gap-2 mb-3">
-              <FiFileText className="h-5 w-5 text-green-500" />
-              <span className="font-medium text-green-700">
+          <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3">
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+              <FiFileText className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 flex-shrink-0" />
+              <span className="font-medium text-green-700 text-sm sm:text-base">
                 {examData.questions.length} questions loaded successfully
               </span>
             </div>
             
             {examData.uploadedFileName && (
-              <div className="text-sm text-gray-600 mb-3">
+              <div className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3 break-words">
                 <span className="font-medium">Source file:</span> {examData.uploadedFileName}
               </div>
             )}
 
-            <div className="max-h-32 overflow-y-auto rounded bg-gray-50 p-3">
-              <h4 className="mb-2 text-sm font-medium text-gray-700">Question Preview:</h4>
-              <div className="space-y-2">
+            <div className="max-h-32 sm:max-h-40 overflow-y-auto rounded bg-gray-50 p-2 sm:p-3">
+              <h4 className="mb-1 sm:mb-2 text-xs sm:text-sm font-medium text-gray-700">Question Preview:</h4>
+              <div className="space-y-1 sm:space-y-2">
                 {examData.questions.slice(0, 3).map((question, index) => (
-                  <div key={index} className="text-sm">
+                  <div key={index} className="text-xs sm:text-sm">
                     <span className="font-medium text-gray-600">Q{index + 1}:</span>
-                    <span className="ml-2 text-gray-700">
-                      {question.question?.length > 80
-                        ? `${question.question.substring(0, 80)}...`
+                    <span className="ml-2 text-gray-700 break-words">
+                      {question.question?.length > 60
+                        ? `${question.question.substring(0, 60)}...`
                         : question.question}
                     </span>
                   </div>
                 ))}
                 {examData.questions.length > 3 && (
-                  <div className="text-sm text-gray-500">
+                  <div className="text-xs sm:text-sm text-gray-500">
                     ... and {examData.questions.length - 3} more questions
                   </div>
                 )}
@@ -217,27 +200,27 @@ const ReviewStep = ({ examData, onNext, onPrev }) => {
             </div>
           </div>
         ) : (
-          <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 bg-amber-50">
+          <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 bg-amber-50">
             <div className="flex items-center gap-2 text-amber-600">
-              <FiFileText className="h-5 w-5" />
-              <span>No questions loaded. You can add questions manually later.</span>
+              <FiFileText className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
+              <span className="text-sm sm:text-base">No questions loaded. You can add questions manually later.</span>
             </div>
           </div>
         )}
       </div>
 
       {/* Action Buttons */}
-      <div className="flex w-full gap-4">
+      <div className="flex flex-col sm:flex-row w-full gap-3 sm:gap-4">
         <button
           onClick={onPrev}
-          className="flex-1 h-12 cursor-pointer rounded-full border-2 border-gray-300 text-gray-700 font-bold hover:bg-gray-50 transition-colors duration-200"
+          className="flex-1 h-12 sm:h-14 cursor-pointer rounded-full border-2 border-gray-300 text-gray-700 font-bold hover:bg-gray-50 active:bg-gray-100 transition-colors duration-200 touch-manipulation text-sm sm:text-base"
         >
           Back to Form
         </button>
         <button
           onClick={handleContinue}
           disabled={isEditing}
-          className="flex-1 h-12 cursor-pointer rounded-full bg-yellow-400 hover:bg-yellow-500 text-black font-bold transition-colors duration-200 disabled:opacity-50"
+          className="flex-1 h-12 sm:h-14 cursor-pointer rounded-full bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black font-bold transition-colors duration-200 disabled:opacity-50 touch-manipulation text-sm sm:text-base"
         >
           Continue to Publish
         </button>

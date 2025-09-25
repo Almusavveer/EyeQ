@@ -94,46 +94,47 @@ const ExamBuilderForm = ({ onNext }) => {
 
   return (
     <form
-      className="flex h-fit w-full flex-col justify-between gap-5"
+      className="flex h-fit w-full flex-col justify-between gap-3 sm:gap-5 p-2 sm:p-0"
       onSubmit={handleSubmit}
     >
-      <div className="mt-4 flex h-22 w-full flex-col items-start justify-around">
-        <h1 className="text-lg font-semibold">Exam Title</h1>
+      <div className="mt-2 sm:mt-4 flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
+        <h1 className="text-base sm:text-lg font-semibold">Exam Title</h1>
         <input
           type="text"
           value={title}
           onChange={({ target }) => setTitle(target.value)}
-          className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+          className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 text-sm sm:text-base outline-none"
           placeholder="Maths test"
         />
       </div>
-      <div className="flex h-22 w-full flex-col items-start justify-around">
-        <h1 className="text-lg font-semibold">Exam Date</h1>
+      <div className="flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
+        <h1 className="text-base sm:text-lg font-semibold">Exam Date</h1>
         <input
           type="date"
           value={date}
           onChange={({ target }) => setDate(target.value)}
-          className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+          className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 text-sm sm:text-base outline-none"
         />
       </div>
-      <div className="flex w-full items-center justify-between">
-        <div className="flex h-22 w-44 flex-col items-start justify-around">
-          <h1 className="text-lg font-semibold">Exam Time</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 sm:items-end">
+        <div className="flex-1">
+          <h1 className="text-base sm:text-lg font-semibold mb-2">Exam Time</h1>
           <input
             type="time"
             value={time}
             onChange={({ target }) => setTime(target.value)}
-            className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
+            className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 sm:p-3 text-base sm:text-base outline-none focus:ring-2 focus:ring-yellow-200"
           />
         </div>
-        <div className="flex h-22 w-36 flex-col items-start justify-around">
-          <h1 className="text-lg font-semibold">Exam Duration</h1>
+        <div className="flex-1">
+          <h1 className="text-base sm:text-lg font-semibold mb-2">Duration (minutes)</h1>
           <input
-            type="text"
+            type="number"
             value={duration}
             onChange={({ target }) => setDuration(target.value)}
-            className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 outline-none"
-            placeholder="120 min"
+            className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 sm:p-3 text-base sm:text-base outline-none focus:ring-2 focus:ring-yellow-200"
+            placeholder="120"
+            min="1"
           />
         </div>
       </div>
@@ -148,7 +149,7 @@ const ExamBuilderForm = ({ onNext }) => {
 
       <button
         type="submit"
-        className="h-12 w-full cursor-pointer rounded-full bg-yellow-400 hover:bg-yellow-500 py-2 text-lg font-bold transition-colors duration-200"
+        className="h-12 sm:h-14 w-full cursor-pointer rounded-full bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 py-2 text-base sm:text-lg font-bold transition-colors duration-200 touch-manipulation"
       >
         Save & Continue
       </button>

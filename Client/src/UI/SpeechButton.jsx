@@ -19,7 +19,15 @@ const SpeechButton = ({ onResult }) => {
     recognition.start();
   };
 
-  return <button onClick={startListening}>🎤 Speak Answer</button>;
+  return (
+    <button 
+      onClick={startListening}
+      className="flex items-center justify-center gap-2 px-4 sm:px-6 py-2 sm:py-2.5 bg-blue-500 hover:bg-blue-600 text-white text-sm sm:text-base font-medium rounded-lg shadow-sm hover:shadow-md transition-all duration-200 touch-manipulation active:bg-blue-700"
+    >
+      <span className="text-lg">🎤</span>
+      <span>Speak Answer</span>
+    </button>
+  );
 };
 
 export default SpeechButton;

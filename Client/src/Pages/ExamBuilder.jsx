@@ -51,10 +51,14 @@ const ExamBuilder = () => {
   };
 
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-3">
-      <h1 className="text-2xl font-bold">Create New Exam</h1>
-      <ProgressBar currentStep={currentStep} />
-      {renderCurrentStep()}
+    <div className="flex min-h-screen w-full flex-col items-center justify-center gap-3 p-4 sm:p-6 lg:p-8">
+      <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-center">Create New Exam</h1>
+      <div className="w-full max-w-sm sm:max-w-md lg:max-w-2xl">
+        <ProgressBar currentStep={currentStep} />
+      </div>
+      <div className="w-full max-w-sm sm:max-w-md lg:max-w-2xl">
+        {renderCurrentStep()}
+      </div>
     </div>
   );
 };

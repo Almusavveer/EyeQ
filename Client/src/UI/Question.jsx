@@ -3,16 +3,17 @@ import React from "react";
 const Question = ({ text, options }) => {
   const option = ["A", "B", "C", "D"];
   return (
-    <div className="flex h-80 flex-col">
-      <h1 className="text-center text-xl font-semibold">Q. {text}</h1>
-      <ol className="mt-4 list-inside">
+    <div className="flex flex-col gap-4 sm:gap-6 py-4 sm:py-6">
+      <h1 className="text-center text-base sm:text-lg lg:text-xl font-semibold text-gray-800 px-2">
+        Q. {text}
+      </h1>
+      <ol className="space-y-3 sm:space-y-4">
         {options.map((opt, i) => (
-
-          <li key={i} className="mt-4 flex rounded-2xl gap-4 border-gray-300 shadow-md border px-5 py-3 items-center">
-           <div className="w-8 text-white p-1 bg-yellow-500 items-center rounded-full font-semibold justify-center flex">
-            {option[i]}  
-           </div>
-           {opt}
+          <li key={i} className="flex items-center gap-3 sm:gap-4 rounded-xl sm:rounded-2xl border border-gray-300 shadow-sm hover:shadow-md px-3 sm:px-5 py-3 sm:py-4 transition-shadow duration-200">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 text-white text-sm sm:text-base bg-yellow-500 rounded-full font-semibold flex items-center justify-center flex-shrink-0">
+              {option[i]}  
+            </div>
+            <span className="text-sm sm:text-base text-gray-700 leading-relaxed">{opt}</span>
           </li>
         ))}
       </ol>

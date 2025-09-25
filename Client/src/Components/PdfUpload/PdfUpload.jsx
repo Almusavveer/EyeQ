@@ -136,9 +136,9 @@ const PdfUpload = ({
     if (isProcessing) {
       return (
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-blue-600 font-medium">📄 Processing PDF...</p>
-          <p className="text-sm text-gray-600">Extracting questions from {uploadedFileName}</p>
+          <div className="animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-blue-600 font-medium text-sm sm:text-base">📄 Processing PDF...</p>
+          <p className="text-xs sm:text-sm text-gray-600 break-words px-2">Extracting questions from {uploadedFileName}</p>
         </div>
       );
     }
@@ -146,8 +146,8 @@ const PdfUpload = ({
     if (error) {
       return (
         <div className="text-center">
-          <p className="text-red-600 font-medium">❌ Error</p>
-          <p className="text-sm text-red-500 max-w-xs mx-auto">{error}</p>
+          <p className="text-red-600 font-medium text-sm sm:text-base">❌ Error</p>
+          <p className="text-xs sm:text-sm text-red-500 max-w-xs mx-auto break-words px-2">{error}</p>
           <p className="text-xs text-gray-500 mt-1">Click to try again</p>
         </div>
       );
@@ -156,9 +156,9 @@ const PdfUpload = ({
     if (extractedQuestions.length > 0) {
       return (
         <div className="text-center">
-          <p className="text-green-600 font-medium">✅ PDF Processed Successfully!</p>
-          <p className="text-sm text-gray-600 max-w-xs mx-auto truncate">{uploadedFileName}</p>
-          <p className="text-sm text-green-600 font-semibold">
+          <p className="text-green-600 font-medium text-sm sm:text-base">✅ PDF Processed Successfully!</p>
+          <p className="text-xs sm:text-sm text-gray-600 max-w-xs mx-auto break-words px-2">{uploadedFileName}</p>
+          <p className="text-xs sm:text-sm text-green-600 font-semibold">
             {extractedQuestions.length} question{extractedQuestions.length !== 1 ? 's' : ''} extracted
           </p>
           <p className="text-xs text-gray-500 mt-1">Click to upload a different file</p>
@@ -168,7 +168,7 @@ const PdfUpload = ({
     
     return (
       <div className="text-center">
-        <p className="font-medium">Drop your PDF file here, or Browse</p>
+        <p className="font-medium text-sm sm:text-base">Drop your PDF file here, or Browse</p>
         <p className="text-xs text-gray-500 mt-1">PDF files only, max {maxSizeMB}MB</p>
       </div>
     );
@@ -177,10 +177,10 @@ const PdfUpload = ({
   return (
     <div className={className}>
       <div
-        className={`flex h-48 w-full cursor-pointer flex-col items-center justify-center gap-4 rounded-md border-3 border-dashed transition-all duration-200 ${getUploadAreaStyle()}`}
+        className={`flex h-36 sm:h-48 w-full cursor-pointer flex-col items-center justify-center gap-2 sm:gap-4 rounded-md border-2 sm:border-3 border-dashed transition-all duration-200 p-4 ${getUploadAreaStyle()}`}
         onClick={handleDivClick}
       >
-        <FiUploadCloud className={`size-16 ${isProcessing ? 'animate-pulse' : ''}`} />
+        <FiUploadCloud className={`size-12 sm:size-16 ${isProcessing ? 'animate-pulse' : ''}`} />
         <input
           type="file"
           ref={fileInputRef}

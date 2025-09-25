@@ -72,19 +72,19 @@ const Option = ({error, setError}) => {
     }
   };
   return (
-    <div className="flex h-28 flex-col justify-around">
-      <div className="flex items-center justify-between">
-        <span className="h-0 w-27 border border-gray-300"></span>
-        <p>or continue with</p>
-        <span className="h-0 w-27 border border-gray-300"></span>
+    <div className="flex flex-col gap-4 sm:gap-6 py-4 sm:py-6">
+      <div className="flex items-center justify-between gap-3 sm:gap-4">
+        <span className="h-px flex-1 bg-gray-300"></span>
+        <p className="text-xs sm:text-sm text-gray-500 whitespace-nowrap px-2">or continue with</p>
+        <span className="h-px flex-1 bg-gray-300"></span>
       </div>
-      <div className="mx-auto flex w-full items-center justify-between">
+      <div className="flex w-full">
         <button
-          className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-300 bg-white py-2"
+          className="flex w-full cursor-pointer items-center justify-center gap-2 sm:gap-3 rounded-full border border-gray-300 bg-white hover:bg-gray-50 py-2.5 sm:py-3 px-4 text-sm sm:text-base font-medium transition-colors duration-200 touch-manipulation active:bg-gray-100"
           onClick={handleGoogleSignup}
         >
-          <FcGoogle className="size-6" />
-          Google
+          <FcGoogle className="w-5 h-5 sm:w-6 sm:h-6 flex-shrink-0" />
+          <span>Continue with Google</span>
         </button>
         {/* <button className="flex w-36 cursor-pointer items-center justify-center gap-2 rounded-full border border-gray-300 bg-white py-2">
           <FiFacebook className="size-6" />

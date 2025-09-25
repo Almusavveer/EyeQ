@@ -74,35 +74,35 @@ const Home = () => {
   }
 
   return (
-    <div className="flex h-fit gap-5 flex-col">
+    <div className="flex h-fit gap-3 sm:gap-5 flex-col p-2 sm:p-0">
       <Nav />
       <button
-        className="w-full font-bold cursor-pointer rounded-lg bg-yellow-400 hover:bg-yellow-500 py-2 transition-colors duration-200"
+        className="w-full font-bold cursor-pointer rounded-lg bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 py-3 sm:py-4 transition-colors duration-200 touch-manipulation text-sm sm:text-base"
         onClick={() => navigate("/exambuilder")}
       >
-        <FiPlus className="inline w-5 h-5 mr-2" />
+        <FiPlus className="inline w-4 h-4 sm:w-5 sm:h-5 mr-2" />
         Create New Exam
       </button>
       
-      <div className="flex h-[80%] flex-col gap-4 overflow-y-scroll">
+      <div className="flex h-[80vh] sm:h-[80%] flex-col gap-3 sm:gap-4 overflow-y-auto px-1">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <FiLoader className="w-6 h-6 animate-spin mr-2" />
-            <span>Loading exams...</span>
+            <FiLoader className="w-5 h-5 sm:w-6 sm:h-6 animate-spin mr-2" />
+            <span className="text-sm sm:text-base">Loading exams...</span>
           </div>
         ) : error ? (
           <div className="text-center py-8 text-red-600">
-            <p>{error}</p>
+            <p className="text-sm sm:text-base">{error}</p>
             <button 
               onClick={() => window.location.reload()} 
-              className="mt-2 text-blue-600 underline"
+              className="mt-2 text-blue-600 underline text-sm sm:text-base touch-manipulation"
             >
               Try again
             </button>
           </div>
         ) : exams.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            <p>No exams found. Create your first exam!</p>
+            <p className="text-sm sm:text-base">No exams found. Create your first exam!</p>
           </div>
         ) : (
           exams.map((exam) => (

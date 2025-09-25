@@ -83,34 +83,41 @@ const ExamPage = () => {
 
   const q = questions[current];
   return (
-    <div className="flex h-full w-full flex-col gap-10 bg-gray-50">
-      <div className="flex flex-col">
-        <h1 className="text-3xl font-bold text-gray-600">Exam</h1>
-        <p className="text-gray-400">{questions.length} questions</p>
+    <div className="flex h-full w-full flex-col gap-6 sm:gap-8 lg:gap-10 bg-gray-50 p-4 sm:p-6 lg:p-8">
+      <div className="flex flex-col gap-1 sm:gap-2">
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-600">Exam</h1>
+        <p className="text-sm sm:text-base text-gray-400">{questions.length} questions</p>
       </div>
-      <div className="scrollbar flex h-20 w-full gap-5 overflow-auto">
+      
+      {/* Question Navigation */}
+      <div className="flex gap-3 sm:gap-4 lg:gap-5 overflow-auto pb-2">
         {questions.map((_, index) => (
           <div
-            className={`flex h-8 w-8 items-center justify-center rounded-full ${current === index ? "bg-[#FBC02D]" : "bg-gray-200"} p-2 text-xl font-bold text-white`}
+            className={`flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-full flex-shrink-0 ${current === index ? "bg-[#FBC02D]" : "bg-gray-200"} text-sm sm:text-base lg:text-xl font-bold text-white transition-colors duration-200`}
             key={index}
           >
             {index + 1}
           </div>
         ))}
       </div>
+      
       {q && !pendingAnswer && (
-        <>
+        <div className="flex-1 space-y-4 sm:space-y-6">
           <Question text={q.text} options={q.options} />
-          <SpeechButton onResult={onSpeech} />
-        </>
+          <div className="flex justify-center">
+            <SpeechButton onResult={onSpeech} />
+          </div>
+        </div>
       )}
 
       {pendingAnswer && (
-        <ConfirmAnswer
-          answer={pendingAnswer}
-          onConfirm={confirmAnswer}
-          onReject={rejectAnswer}
-        />
+        <div className="flex-1 flex items-center justify-center">
+          <ConfirmAnswer
+            answer={pendingAnswer}
+            onConfirm={confirmAnswer}
+            onReject={rejectAnswer}
+          />
+        </div>
       )}
 
       {/* <AnswerList answers={answers} /> */}
