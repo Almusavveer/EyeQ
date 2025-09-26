@@ -1,4 +1,5 @@
 import React, { useEffect } from "react";
+import { speakText } from "../utils/speechUtils";
 
 const Result = ({ answers, questions }) => {
   const score = answers.reduce((acc, a) => {
@@ -7,10 +8,28 @@ const Result = ({ answers, questions }) => {
   }, 0);
 
   useEffect(() => {
-    const u = new SpeechSynthesisUtterance(
-      `Exam completed. Your score is ${score} out of ${questions.length}.`
-    );
-    window.speechSynthesis.speak(u);
+    const announceResult = async () => {
+      try {
+        const resultText = `Exam completed. Your score is ${score} out of ${questions.length} questions.`;
+        await speakText(resultText, {
+          rate: 0.8,
+          lang: "en-US",
+          pitch: 1,
+          volume: 1
+        });
+      } catch (error) {
+        console.error("Failed to speak result:", error);
+        // Fallback
+        const u = new SpeechSynthesisUtterance(
+          `Exam completed. Your score is ${score} out of ${questions.length}.`
+        );
+        u.rate = 0.8;
+        u.lang = "en-US";
+        window.speechSynthesis.speak(u);
+      }
+    };
+
+    announceResult();
   }, [score, questions.length]);
 
   return (

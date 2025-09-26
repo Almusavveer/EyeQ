@@ -72,4 +72,19 @@
   .scrollbar{
     scrollbar-width: none;
   }
+  
+  /* Hide scrollbar for WebKit browsers */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
+  
+  /* Custom touch scrolling for better mobile experience */
+  .scroll-smooth {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
 }
