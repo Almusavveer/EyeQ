@@ -122,7 +122,7 @@ const Home = () => {
             <Card
               key={exam.id}
               examTitle={exam.examTitle}
-              examDate={exam.examTime}
+              examDate={exam.examDate || exam.examTime}
               examId={exam.id}
               onViewResults={handleViewResults}
               examDuration={exam.examDuration}

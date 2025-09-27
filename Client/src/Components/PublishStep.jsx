@@ -150,7 +150,14 @@ const PublishStep = ({ examData, onPrev }) => {
           <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-3 text-sm sm:text-base outline-none">
             <div className="space-y-2">
               <p><strong>Title:</strong> <span className="break-words">{examData?.examTitle}</span></p>
-              <p><strong>Date:</strong> {examData?.examDate ? new Date(examData.examDate).toLocaleDateString() : "Not set"}</p>
+              <p><strong>Date:</strong> {(examData?.examDate || examData?.examTime) ? (() => {
+                try {
+                  const date = new Date(examData.examDate || examData.examTime);
+                  return !isNaN(date.getTime()) ? date.toLocaleDateString() : "Not set";
+                } catch {
+                  return "Not set";
+                }
+              })() : "Not set"}</p>
               <p><strong>Duration:</strong> {examData?.examDuration} minutes</p>
               <p><strong>Questions:</strong> {examData?.questions?.length || 0} questions loaded</p>
               {examData?.uploadedFileName && (

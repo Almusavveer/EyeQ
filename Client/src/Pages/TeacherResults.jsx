@@ -134,7 +134,32 @@ const TeacherResults = () => {
                 <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
                   <div className="flex items-center">
                     <FiCalendar className="h-4 w-4 mr-1" />
-                    {new Date(examData?.examTime).toLocaleDateString()}
+                    {(() => {
+                      try {
+                        // Try examDate first, then examTime as fallback
+                        const dateField = examData?.examDate || examData?.examTime;
+                        
+                        if (!dateField) return 'Not specified';
+                        
+                        // Handle Firestore Timestamp objects
+                        let date;
+                        if (dateField.seconds !== undefined) {
+                          // It's a Firestore Timestamp - convert using seconds
+                          date = new Date(dateField.seconds * 1000);
+                        } else if (dateField.toDate && typeof dateField.toDate === 'function') {
+                          // It has a toDate method
+                          date = dateField.toDate();
+                        } else {
+                          // Regular date string or Date object
+                          date = new Date(dateField);
+                        }
+                        
+                        return !isNaN(date.getTime()) ? date.toLocaleDateString() : 'Not specified';
+                      } catch (error) {
+                        console.error('Date formatting error:', error);
+                        return 'Not specified';
+                      }
+                    })()}
                   </div>
                   <div className="flex items-center">
                     <FiClock className="h-4 w-4 mr-1" />
@@ -234,7 +259,14 @@ const TeacherResults = () => {
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {new Date(result.submittedAt?.toDate?.() || result.submittedAt).toLocaleDateString()}
+                          {(() => {
+                            try {
+                              const date = new Date(result.submittedAt?.toDate?.() || result.submittedAt);
+                              return !isNaN(date.getTime()) ? date.toLocaleDateString() : 'Not available';
+                            } catch {
+                              return 'Not available';
+                            }
+                          })()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <button 

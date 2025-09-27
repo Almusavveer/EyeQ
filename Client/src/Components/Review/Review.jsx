@@ -86,8 +86,9 @@ const Review = () => {
         setEditDuration(data.examDuration || "");
 
         // Format date and time for inputs
-        if (data.examTime) {
-          const examDate = data.examTime.toDate();
+        const examTimestamp = data.examDate || data.examTime;
+        if (examTimestamp) {
+          const examDate = examTimestamp.toDate();
           setEditDate(examDate.toISOString().split("T")[0]);
           setEditTime(examDate.toTimeString().slice(0, 5));
         }
@@ -150,7 +151,7 @@ const Review = () => {
         // Create new exam in Firebase
         const examDocData = {
           examTitle: editTitle.trim(),
-          examTime: examDateTs,
+          examDate: examDateTs,
           examDuration: editDuration,
           createdBy: examData.createdBy,
           creatorEmail: examData.creatorEmail,
@@ -194,7 +195,7 @@ const Review = () => {
         const examRef = doc(db, "examDetails", examId);
         const updateData = {
           examTitle: editTitle.trim(),
-          examTime: examDateTs,
+          examDate: examDateTs,
           examDuration: editDuration,
           updatedAt: Timestamp.now(),
           published: true,

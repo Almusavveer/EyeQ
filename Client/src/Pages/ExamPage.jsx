@@ -888,7 +888,7 @@ const ExamPage = () => {
                     <span className="text-sm font-medium">{questions.length} questions</span>
                   </div>
                   
-                  {examData?.examTime && (
+                  {(examData?.examDate || examData?.examTime) && (
                     <>
                       <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
                       <div className="flex items-center gap-1 text-gray-500">
@@ -896,7 +896,7 @@ const ExamPage = () => {
                         <span className="text-sm font-medium">
                           {(() => {
                             try {
-                              const time = new Date(examData.examTime);
+                              const time = new Date(examData?.examDate || examData?.examTime);
                               return !isNaN(time.getTime()) ? time.toLocaleDateString() : 'Today';
                             } catch {
                               return 'Today';

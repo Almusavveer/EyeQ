@@ -144,7 +144,14 @@ const ReviewStep = ({ examData, onNext, onPrev }) => {
           <div className="flex h-fit sm:h-22 w-full flex-col items-start justify-around gap-2">
             <h1 className="text-base sm:text-lg font-semibold">Exam Date</h1>
             <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 bg-gray-50 text-sm sm:text-base break-words">
-              {examData?.examDate ? new Date(examData.examDate).toLocaleDateString() : "Not set"}
+              {(examData?.examDate || examData?.examTime) ? (() => {
+                try {
+                  const date = new Date(examData.examDate || examData.examTime);
+                  return !isNaN(date.getTime()) ? date.toLocaleDateString() : "Not set";
+                } catch {
+                  return "Not set";
+                }
+              })() : "Not set"}
             </div>
           </div>
 
@@ -153,7 +160,14 @@ const ReviewStep = ({ examData, onNext, onPrev }) => {
             <div className="flex-1">
               <h1 className="text-base sm:text-lg font-semibold mb-2">Exam Time</h1>
               <div className="w-full rounded-xl border border-r-2 border-b-2 border-l-2 border-gray-300 border-r-yellow-400 border-b-yellow-400 border-l-yellow-400 p-2 sm:p-3 bg-gray-50 text-sm sm:text-base">
-                {examData?.examDate ? new Date(examData.examDate).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Not set"}
+                {(examData?.examDate || examData?.examTime) ? (() => {
+                  try {
+                    const date = new Date(examData.examDate || examData.examTime);
+                    return !isNaN(date.getTime()) ? date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : "Not set";
+                  } catch {
+                    return "Not set";
+                  }
+                })() : "Not set"}
               </div>
             </div>
             <div className="flex-1">
