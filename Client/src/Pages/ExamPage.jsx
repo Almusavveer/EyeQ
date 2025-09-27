@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import React from "react";
 import { useParams } from "react-router";
 import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
@@ -606,7 +607,52 @@ const ExamPage = () => {
   }
 
   if (finished) {
-    return <Result answers={answers} questions={questions} />;
+    // Add speech announcement for completion
+    const announceCompletion = async () => {
+      try {
+        await speakText(`Exam completed successfully. You answered ${answers.length} out of ${questions.length} questions. Thank you for taking the exam.`, {
+          rate: 0.8,
+          lang: "en-US",
+          pitch: 1,
+          volume: 1
+        });
+      } catch (error) {
+        console.error("Failed to speak completion:", error);
+      }
+    };
+
+    // Announce completion when component mounts
+    React.useEffect(() => {
+      announceCompletion();
+    }, []);
+
+    return (
+      <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+        <div className="max-w-md mx-auto text-center space-y-6 bg-white rounded-xl shadow-lg p-8">
+          {/* Success Icon */}
+          <div className="text-6xl mb-4">✅</div>
+          
+          {/* Completion Message */}
+          <div className="space-y-3">
+            <h2 className="text-2xl font-bold text-gray-800">
+              Exam Completed Successfully!
+            </h2>
+            <p className="text-gray-600">
+              Your answers have been submitted. Thank you for taking the exam.
+            </p>
+            <p className="text-sm text-gray-500">
+              You can close this tab now. Results will be shared by your instructor.
+            </p>
+          </div>
+          
+          {/* Additional Info */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+            <p><strong>Questions Answered:</strong> {answers.length} of {questions.length}</p>
+            <p><strong>Exam:</strong> {examData?.examTitle || "Exam"}</p>
+          </div>
+        </div>
+      </div>
+    );
   }
   console.log(current);
 

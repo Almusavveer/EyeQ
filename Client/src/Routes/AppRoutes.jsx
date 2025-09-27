@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router";
+import { Route, Routes } from "react-router-dom";
 import Login from "../Components/Login/Login";
 import Register from "../Components/Register/Register";
 import Home from "../Pages/Home";
@@ -8,6 +8,7 @@ import ReviewEdit from "../Pages/ReviewEdit";
 import Role from "../Pages/Role";
 import ExamPage from "../Pages/ExamPage";
 import StudentManager from "../Pages/StudentManager";
+import TeacherResults from "../Pages/TeacherResults";
 
 const AppRoutes = () => {
   return (
@@ -29,6 +30,7 @@ const AppRoutes = () => {
       <Route path="/students" element={<StudentManager />} />
       <Route path="/review/:examId" element={<ReviewEdit />} />
       <Route path="/review" element={<ReviewEdit />} />
+      <Route path="/results/:examId" element={<TeacherResults />} />
     </Routes>
   );
 };
