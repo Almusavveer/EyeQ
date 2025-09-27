@@ -32,6 +32,18 @@ const ExamPage = () => {
   const [rollNumber, setRollNumber] = useState("");
   const [verificationError, setVerificationError] = useState("");
   const [verifying, setVerifying] = useState(false);
+  
+  // Student details state
+  const [studentData, setStudentData] = useState(null);
+  
+  // Timer states
+  const [timeRemaining, setTimeRemaining] = useState(null);
+  const [examStartTime, setExamStartTime] = useState(null);
+  const [instructionsComplete, setInstructionsComplete] = useState(false);
+  const [questionTimeRemaining, setQuestionTimeRemaining] = useState(null);
+  const [timePerQuestion, setTimePerQuestion] = useState(null);
+  const timerRef = useRef(null);
+  const questionTimerRef = useRef(null);
 
   // Verification function
   const handleVerification = async (e) => {
@@ -80,8 +92,9 @@ const ExamPage = () => {
       
       if (!querySnapshot.empty) {
         // Student found in creator's database
-        const studentData = querySnapshot.docs[0].data();
-        console.log("✅ Student verified:", studentData);
+        const studentDetails = querySnapshot.docs[0].data();
+        console.log("✅ Student verified:", studentDetails);
+        setStudentData(studentDetails);
         setIsVerified(true);
       } else {
         // Student not found
@@ -165,10 +178,13 @@ const ExamPage = () => {
       if (current === 0) {
         const announceOrientation = async () => {
           try {
-            await speakText(`Welcome to the exam. You are on question ${current + 1} of ${questions.length}. I will read the question and options. To interact with the exam, simply click anywhere on the screen to activate the microphone. Speak your answer to select an option, then say "confirm" to submit. If you want to change your selection, say "change" and speak a new option. You can also say "repeat" anytime to hear the question again.`, {
+            const durationText = examData?.examDuration ? ` You have ${examData.examDuration} minutes to complete this exam.` : '';
+            await speakText(`Welcome to the exam. You are on question ${current + 1} of ${questions.length}.${durationText} I will read the question and options. To interact with the exam, simply click anywhere on the screen to activate the microphone. Speak your answer to select an option, then say "confirm" to submit. If you want to change your selection, say "change" and speak a new option. You can also say "repeat" anytime to hear the question again. The timer will start now.`, {
               rate: 0.9,
               lang: "en-US"
             });
+            // Mark instructions as complete to start timer
+            setInstructionsComplete(true);
             // Then read the first question
             setTimeout(() => speakQuestion(questions[current]), 1000);
           } catch (error) {
@@ -183,6 +199,145 @@ const ExamPage = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current, finished, loading]);
+
+  // Initialize timer when instructions are complete
+  useEffect(() => {
+    if (instructionsComplete && examData?.examDuration && timeRemaining === null) {
+      const startTime = Date.now();
+      setExamStartTime(startTime);
+      const totalSeconds = examData.examDuration * 60;
+      const secondsPerQuestion = Math.floor(totalSeconds / questions.length);
+      
+      setTimeRemaining(totalSeconds);
+      setTimePerQuestion(secondsPerQuestion);
+      setQuestionTimeRemaining(secondsPerQuestion);
+      
+      console.log("⏱️ Timer started:", {
+        totalMinutes: examData.examDuration,
+        questionsCount: questions.length,
+        secondsPerQuestion
+      });
+    }
+  }, [instructionsComplete, examData, timeRemaining, questions.length]);
+
+  // Per-question timer countdown effect
+  useEffect(() => {
+    if (questionTimeRemaining !== null && questionTimeRemaining > 0 && !finished && instructionsComplete) {
+      questionTimerRef.current = setInterval(() => {
+        setQuestionTimeRemaining(prev => {
+          if (prev <= 1) {
+            // Time's up for this question - auto advance
+            console.log("⏰ Question time up! Auto-advancing...");
+            
+            // Save current answer (even if empty) and move to next question
+            const newAnswers = [...answers];
+            newAnswers[current] = {
+              question: questions[current]?.text || questions[current]?.question,
+              answer: selectedOption || "Not answered (time expired)",
+              isCorrect: false // Mark as incorrect since time expired
+            };
+            setAnswers(newAnswers);
+            
+            // Reset states for next question
+            setSelectedOption(null);
+            setQuestionReadingComplete(false);
+            
+            const nextQuestion = current + 1;
+            if (nextQuestion < questions.length) {
+              setCurrent(nextQuestion);
+              // Reset question timer for next question
+              setQuestionTimeRemaining(timePerQuestion);
+              
+              // Announce time expiration and new question
+              setTimeout(() => {
+                speakText(`Time expired for the previous question. Moving to question ${nextQuestion + 1}.`, {
+                  rate: 0.9,
+                  lang: "en-US"
+                }).then(() => {
+                  setTimeout(() => speakQuestion(questions[nextQuestion]), 500);
+                }).catch(console.error);
+              }, 100);
+            } else {
+              // Last question - finish exam
+              handleSubmitExam();
+            }
+            
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        if (questionTimerRef.current) {
+          clearInterval(questionTimerRef.current);
+        }
+      };
+    }
+  }, [questionTimeRemaining, finished, instructionsComplete, current, questions, selectedOption, answers, timePerQuestion]);
+
+  // Reset question timer when moving to a new question manually
+  useEffect(() => {
+    if (timePerQuestion && instructionsComplete) {
+      setQuestionTimeRemaining(timePerQuestion);
+    }
+  }, [current, timePerQuestion, instructionsComplete]);
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (timeRemaining !== null && timeRemaining > 0 && !finished && instructionsComplete) {
+      timerRef.current = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            // Time's up - auto submit exam
+            console.log("⏰ Time's up! Auto-submitting exam...");
+            handleSubmitExam();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+        }
+      };
+    }
+  }, [timeRemaining, finished]);
+
+  // Clean up timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      if (questionTimerRef.current) {
+        clearInterval(questionTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Exam submission handler
+  const handleSubmitExam = () => {
+    // Clear timers
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    if (questionTimerRef.current) {
+      clearInterval(questionTimerRef.current);
+    }
+    // Complete the exam
+    setFinished(true);
+  };
+
+  // Format time remaining for display
+  const formatTime = (seconds) => {
+    if (seconds <= 0) return "00:00";
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
 
   // Speech recognition functions
   const startListening = () => {
@@ -671,19 +826,183 @@ const ExamPage = () => {
         }
       }}
     >
-      <div className="flex flex-col gap-1 sm:gap-2">
-        <h1 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-gray-600 text-center sm:text-left">
-          {examData?.examTitle || "Exam"}
-        </h1>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-center sm:text-left">
-          <p className="text-xs sm:text-sm md:text-base text-gray-400">
-            {questions.length} questions
-          </p>
-          {examData?.examDuration && (
-            <p className="text-xs sm:text-sm md:text-base text-gray-400">
-              Duration: {examData.examDuration} minutes
-            </p>
-          )}
+      <div className="flex flex-col gap-2 lg:gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3 lg:gap-4">
+          {/* Left side - Student Details */}
+          <div className="flex flex-col items-center lg:items-start gap-2 order-2 lg:order-1">
+            {/* Student Information */}
+            {studentData && (
+              <div className="bg-white rounded-lg lg:rounded-xl p-3 lg:p-6 shadow-md lg:shadow-lg border border-gray-100 w-full max-w-[280px] sm:max-w-[300px] lg:max-w-[220px]">
+                <div className="space-y-2 lg:space-y-4">
+                  {/* Hide decorative header on mobile */}
+                  <div className="hidden lg:block text-center lg:text-left">
+                    <div className="text-xs text-blue-600 font-semibold uppercase tracking-wider mb-2 sm:mb-3 opacity-80">
+                      Student Details
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-1 lg:space-y-3">
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800 leading-tight text-center lg:text-left">
+                        {studentData.name || studentData.studentName || "Student"}
+                      </p>
+                    </div>
+                    
+                    <div className="flex items-center justify-center lg:justify-start gap-2 lg:gap-3 text-xs lg:text-sm">
+                      <span className="text-gray-400 font-medium">Roll:</span>
+                      <span className="text-gray-700 font-medium">
+                        {studentData.rollNumber}
+                      </span>
+                    </div>
+                    
+                    {studentData.class && (
+                      <div className="flex items-center justify-center lg:justify-start gap-2 lg:gap-3 text-xs lg:text-sm">
+                        <span className="text-gray-400 font-medium">Class:</span>
+                        <span className="text-gray-700 font-medium">
+                          {studentData.class}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Center - Exam Title */}
+          <div className="flex-1 flex flex-col items-center px-2 sm:px-4 order-1 lg:order-2">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-lg border border-gray-100 w-full max-w-[400px] lg:max-w-[500px]">
+                <div className="text-center space-y-1 lg:space-y-3">
+                {/* Hide decorative header on mobile */}
+                <div className="hidden lg:block text-xs text-indigo-600 font-semibold uppercase tracking-wider opacity-80">
+                  Examination
+                </div>
+                
+                <h1 className="text-base lg:text-2xl xl:text-3xl font-bold text-gray-800 leading-tight">
+                  {examData?.examTitle || "Exam"}
+                </h1>
+                
+                <div className="flex items-center justify-center gap-2 pt-2">
+                  <div className="flex items-center gap-1 text-gray-500">
+                    <span className="text-sm">📝</span>
+                    <span className="text-sm font-medium">{questions.length} questions</span>
+                  </div>
+                  
+                  {examData?.examTime && (
+                    <>
+                      <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                      <div className="flex items-center gap-1 text-gray-500">
+                        <span className="text-sm">�</span>
+                        <span className="text-sm font-medium">
+                          {(() => {
+                            try {
+                              const time = new Date(examData.examTime);
+                              return !isNaN(time.getTime()) ? time.toLocaleDateString() : 'Today';
+                            } catch {
+                              return 'Today';
+                            }
+                          })()}
+                        </span>
+                      </div>
+                    </>
+                  )}
+                </div>
+                
+                {/* Hide decorative line on mobile */}
+                <div className="hidden lg:flex items-center justify-center pt-2">
+                  <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent w-24"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Right side - Timer */}
+          <div className="flex flex-col items-center sm:items-end gap-2 sm:w-40">
+            {/* Timer Display */}
+            {timeRemaining !== null && (
+              <div className="bg-white border-2 border-gray-200 rounded-xl p-4 shadow-lg min-w-[120px]">
+                <div className="text-center">
+                  {/* Question Time */}
+                  {questionTimeRemaining !== null && (
+                    <div>
+                      <div className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">Question Time</div>
+                      <div className={`text-lg sm:text-xl font-bold tabular-nums ${
+                        questionTimeRemaining <= 10 ? 'text-red-600' : 
+                        questionTimeRemaining <= 30 ? 'text-orange-600' : 
+                        'text-blue-600'
+                      }`}>
+                        {formatTime(questionTimeRemaining)}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Circular Progress Ring for Question Time */}
+                  {examData?.examDuration && questionTimeRemaining !== null && timePerQuestion && (
+                    <div className="relative w-12 h-12 mx-auto">
+                      <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 48 48">
+                        {/* Background circle */}
+                        <circle
+                          cx="24"
+                          cy="24"
+                          r="20"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                          className="text-gray-200"
+                        />
+                        {/* Progress circle for question time */}
+                        <circle
+                          cx="24"
+                          cy="24"
+                          r="20"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                          strokeDasharray={`${2 * Math.PI * 20}`}
+                          strokeDashoffset={`${2 * Math.PI * 20 * (1 - Math.max(0, questionTimeRemaining / timePerQuestion))}`}
+                          className={`transition-all duration-1000 ${
+                            questionTimeRemaining <= 10 ? 'text-red-500' : 
+                            questionTimeRemaining <= 30 ? 'text-orange-500' : 
+                            'text-blue-500'
+                          }`}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      {/* Animated hourglass icon in center */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="relative">
+                          <span 
+                            className={`text-sm inline-block ${
+                              questionTimeRemaining <= 10 
+                                ? 'animate-bounce' 
+                                : ''
+                            }`}
+                            style={{
+                              animation: questionTimeRemaining > 30 
+                                ? 'rotate360 1s linear infinite' 
+                                : questionTimeRemaining > 10 
+                                ? 'pulse 1.5s ease-in-out infinite'
+                                : 'bounce 0.6s infinite',
+                              transformOrigin: 'center center'
+                            }}
+                          >
+                            ⏳
+                          </span>
+                          
+                          <style jsx>{`
+                            @keyframes rotate360 {
+                              0% { transform: rotate(0deg); }
+                              100% { transform: rotate(360deg); }
+                            }
+                          `}</style>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
       
