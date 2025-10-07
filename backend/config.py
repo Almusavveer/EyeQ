@@ -1,14 +1,9 @@
 # Configuration settings for the Flask application
 import os
 
-# CORS settings - Add your Vercel domain here
+# CORS settings - Production domain only
 CORS_ORIGINS = [
-    "https://eye-q-black.vercel.app", 
-    "https://your-app-name.vercel.app",  # Replace with your actual Vercel domain
-    "http://localhost:5173", 
-    "http://127.0.0.1:5173",
-    "http://localhost:5174", 
-    "http://127.0.0.1:5174"
+    "https://eye-q-kappa.vercel.app"
 ]
 
 # File upload settings
