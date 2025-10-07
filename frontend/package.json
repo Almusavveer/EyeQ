@@ -9,8 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "clean": "rm -rf node_modules package-lock.json",
-    "fresh-install": "npm run clean && npm install",
-    "vercel-build": "npm ci && npm run build"
+    "fresh-install": "npm run clean && npm install"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.1.14",
