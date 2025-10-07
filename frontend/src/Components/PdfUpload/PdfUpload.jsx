@@ -21,7 +21,7 @@ const PdfUpload = ({
 
     // Use production API URL when deployed, localhost for development
     const apiUrl = process.env.NODE_ENV === 'production' 
-      ? '/api/upload' 
+      ? 'https://eyeq-backend-0wa9.onrender.com/api/upload' 
       : 'http://127.0.0.1:5000/api/upload';
 
     try {
