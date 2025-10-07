@@ -1,9 +1,10 @@
 # ============================================
-# Frontend (React/Node.js/Vite) - Client/
+# Frontend (React/Node.js/Vite) - frontend/
 # ============================================
 
 # Dependencies
 node_modules/
+frontend/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -12,6 +13,7 @@ lerna-debug.log*
 
 # Build outputs
 dist/
+frontend/dist/
 dist-ssr/
 build/
 .next/

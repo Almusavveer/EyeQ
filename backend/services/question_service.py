@@ -36,17 +36,17 @@ def extract_questions_from_pdf(file):
         
         # Enhanced question detection patterns with priority order
         question_patterns = [
-            # Pattern 1: Explicit question numbering (highest priority)
+            # Pattern 1: Numbered questions with options and answers (highest priority for your format)
+            r'(?:^|\n)\s*(\d+)\.\s*(.+?)(?=(?:^|\n)\s*\d+\.|$)',
+            
+            # Pattern 2: Explicit question numbering 
             r'(?:^|\n)\s*(?:Q\.?|Question|Problem)\s*\d+[\.\):]\s*(.+?)(?=(?:^|\n)\s*(?:Q\.?|Question|Problem)\s*\d+[\.\):]|(?:^|\n)\s*(?:A\.?|Answer|Solution)\s*\d+|$)',
             
-            # Pattern 2: Simple numbering with flexible spacing (enhanced)
+            # Pattern 3: Simple numbering with flexible spacing (fallback)
             r'(?:^|\n)\s*(\d+)[\.\)]\s*(.+?)(?=(?:^|\n)\s*\d+[\.\)]|$)',
             
-            # Pattern 3: Question-like sentences (medium priority)
+            # Pattern 4: Question-like sentences (lower priority)
             r'(?:^|\n)\s*([A-Z][\w\s]{10,}(?:below|following|code|program|output|result)[\w\s]*\?)(?=(?:^|\n)|$)',
-            
-            # Pattern 4: Specific "What will be" patterns (lower priority)
-            r'(?:^|\n)\s*(What\s+(?:will\s+be|is)\s+the\s+output.+?)(?=(?:^|\n)\s*(?:What|Question|Q\.?|\d+[\.\)])|$)',
         ]
         
         # Try each pattern with priority
@@ -78,17 +78,28 @@ def extract_questions_from_pdf(file):
                         
                         # Extract options and clean question text
                         options = extract_options_from_text(formatted_question)
+                        correct_answer_letter = extract_correct_answer_from_text(formatted_question)
                         clean_question_text = separate_question_from_options(formatted_question, options)
+                        
+                        # Map the answer letter to the actual option text
+                        correct_answer_text = ""
+                        if correct_answer_letter and len(options) >= 4:
+                            # Map A->0, B->1, C->2, D->3
+                            answer_index_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
+                            if correct_answer_letter.upper() in answer_index_map:
+                                index = answer_index_map[correct_answer_letter.upper()]
+                                if index < len(options):
+                                    correct_answer_text = options[index]
                         
                         # Create question object in expected format
                         question_obj = {
                             "question": clean_question_text,
                             "options": options,
-                            "correctAnswer": "",
+                            "correctAnswer": correct_answer_text,
                             "type": "multiple-choice"
                         }
                         questions.append(question_obj)
-                        logger.info(f"Added question with {len(options)} options: {clean_question_text[:100]}...")
+                        logger.info(f"Added question with {len(options)} options, correct answer: {correct_answer_letter} -> '{correct_answer_text[:30]}...': {clean_question_text[:100]}...")
                 
                 if questions:
                     break  # Use first pattern that finds valid questions
@@ -104,16 +115,27 @@ def extract_questions_from_pdf(file):
                     
                     # Extract options and clean question text
                     options = extract_options_from_text(formatted_question)
+                    correct_answer_letter = extract_correct_answer_from_text(formatted_question)
                     clean_question_text = separate_question_from_options(formatted_question, options)
+                    
+                    # Map the answer letter to the actual option text
+                    correct_answer_text = ""
+                    if correct_answer_letter and len(options) >= 4:
+                        # Map A->0, B->1, C->2, D->3
+                        answer_index_map = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
+                        if correct_answer_letter.upper() in answer_index_map:
+                            index = answer_index_map[correct_answer_letter.upper()]
+                            if index < len(options):
+                                correct_answer_text = options[index]
                     
                     question_obj = {
                         "question": clean_question_text,
                         "options": options,
-                        "correctAnswer": "",
+                        "correctAnswer": correct_answer_text,
                         "type": "multiple-choice"
                     }
                     questions.append(question_obj)
-                    logger.info(f"Added paragraph question with {len(options)} options: {clean_question_text[:100]}...")
+                    logger.info(f"Added paragraph question with {len(options)} options, correct answer: {correct_answer_letter} -> '{correct_answer_text[:30]}...': {clean_question_text[:100]}...")
         
         # Validate and clean up questions
         validated_questions = validate_extracted_questions(questions)
@@ -293,6 +315,20 @@ def is_question_text(text):
             r'compile.*error',  # Compilation questions
             r'runtime.*error',  # Runtime error questions
             r'syntax.*error',  # Syntax error questions
+            
+            # Statement-based questions (common in academic tests)
+            r'.*is\s+responsible\s+for.*:',  # "X is responsible for:"
+            r'.*purpose\s+of.*:',  # "The purpose of X:"
+            r'.*function\s+of.*:',  # "The function of X:"
+            r'.*role\s+of.*:',  # "The role of X:"
+            r'.*main\s+.*\s+of.*:',  # "The main function of X:"
+            r'java\s+virtual\s+machine',  # JVM questions
+            r'jvm.*responsible',  # JVM responsibility questions
+            r'.*following.*true',  # "Which of the following is true"
+            r'.*access\s+modif',  # Access modifier questions
+            r'.*keyword.*java',  # Java keyword questions
+            r'.*exception.*thrown',  # Exception handling questions
+            r'.*block.*executed',  # Code block questions
         ]
         
         for pattern in additional_patterns:
@@ -324,14 +360,18 @@ def extract_options_from_text(question_text):
     
     # Multiple patterns to catch different option formats
     option_patterns = [
-        # Pattern 1: Newline-separated options like "a) text\nb) text\nc) text\nd) text"
-        r'([a-d]\)\s*[^\n\r]+?)(?=\n\s*[a-d]\)|\n\n|$)',
+        # Pattern 1: Uppercase letters with dots - A. B. C. D. (most common in academic PDFs)
+        # Look for each option separately on its own line or with clear separation
+        r'(?:^|\n)\s*([A-D])\.\s*([^\n\r]+?)(?=\s*(?:^|\n)\s*[A-D]\.|Answer:|$)',
         
-        # Pattern 2: All options in one line or paragraph
-        r'([a-d]\)\s*[^a-d\)]*?)(?=\s*[a-d]\)|$)',
+        # Pattern 2: Find all A. B. C. D. options in sequence
+        r'([A-D])\.\s*([^A-D\n]+?)(?=\s*[A-D]\.|Answer:|$)',
         
-        # Pattern 3: Options with various spacing
-        r'([a-d]\)\s*.*?)(?=\s+[a-d]\)|$)',
+        # Pattern 3: Lowercase letters with parentheses - a) b) c) d)
+        r'([a-d])\)\s*([^\n\r]+?)(?=\s*[a-d]\)|Answer:|$)',
+        
+        # Pattern 4: Uppercase letters with parentheses - A) B) C) D)
+        r'([A-D])\)\s*([^A-D\n]+?)(?=\s*[A-D]\)|Answer:|$)',
     ]
     
     # Try each pattern
@@ -342,47 +382,83 @@ def extract_options_from_text(question_text):
             # Clean up matches and filter out empty ones
             clean_options = []
             for match in matches:
-                cleaned = match.strip()
+                if len(match) == 2:  # (letter, text) tuple
+                    letter, text = match
+                    cleaned = text.strip()
+                else:
+                    cleaned = match.strip() if isinstance(match, str) else str(match).strip()
+                
                 # Remove newlines within the option and normalize whitespace
                 cleaned = re.sub(r'\s+', ' ', cleaned).strip()
                 
-                # Must be more than just "a)" or similar and have actual content
-                if cleaned and len(cleaned) > 3 and not re.match(r'^[a-d]\)\s*$', cleaned):
+                # Remove trailing punctuation and clean up
+                cleaned = re.sub(r'[,\s]*$', '', cleaned)
+                
+                # Must have actual content
+                if cleaned and len(cleaned) > 2:
                     clean_options.append(cleaned)
             
             # Only accept if we have at least 2 valid options (preferably 4 for MCQ)
             if len(clean_options) >= 2:
                 options = clean_options[:4]  # Limit to 4 options max
-                logger.info(f"Pattern {i+1} extracted {len(options)} options")
+                logger.info(f"Pattern {i+1} extracted {len(options)} options: {[opt[:30] + '...' if len(opt) > 30 else opt for opt in options]}")
                 break
     
     return options
 
-def separate_question_from_options(question_text, options):
-    """
-    Remove extracted options from the question text to get clean question
-    """
-    if not options:
-        return question_text
+def extract_correct_answer_from_text(question_text):
+    """Extract the correct answer from question text if present"""
     
-    clean_question = question_text
-    
-    # Remove each option from the question text
-    for option in options:
-        # Create pattern to match the option (escape special regex chars)
-        option_pattern = re.escape(option)
-        clean_question = re.sub(option_pattern, '', clean_question, flags=re.IGNORECASE)
-    
-    # Also remove common option patterns that might remain
-    option_cleanup_patterns = [
-        r'[a-d]\)\s*$',  # Remove hanging option letters
-        r'\n[a-d]\)\s*',  # Remove option letters at start of lines
-        r'[a-d]\)\s*\n',  # Remove option letters before newlines
-        r'[a-d]\)\s*[^\n]*\n',  # Remove entire option lines
+    # Patterns to find "Answer: X" where X is the correct option
+    answer_patterns = [
+        r'Answer:\s*([A-D])\.\s*[^A-D]*',  # Answer: A. some text
+        r'Answer:\s*([A-D])\s*[^A-D]*',    # Answer: A some text  
+        r'Answer:\s*([A-D])\)',           # Answer: A)
+        r'Answer:\s*([A-D])',             # Answer: A
     ]
     
-    for pattern in option_cleanup_patterns:
+    for pattern in answer_patterns:
+        match = re.search(pattern, question_text, re.IGNORECASE)
+        if match:
+            correct_letter = match.group(1).upper()
+            logger.info(f"Found correct answer: {correct_letter}")
+            return correct_letter
+    
+    return ""
+
+def separate_question_from_options(question_text, options):
+    """
+    Remove extracted options and answer from the question text to get clean question
+    """
+    clean_question = question_text
+    
+    # Remove the answer section first (everything from "Answer:" to end)
+    answer_patterns = [
+        r'Answer:\s*[A-D]\..*$',     # Answer: A. explanation
+        r'Answer:\s*[A-D]\s*.*$',   # Answer: A explanation
+        r'Answer:\s*[A-D]$',        # Answer: A (at end)
+    ]
+    
+    for pattern in answer_patterns:
+        clean_question = re.sub(pattern, '', clean_question, flags=re.IGNORECASE | re.MULTILINE | re.DOTALL)
+    
+    # Remove all option lines - handle both A. and A) formats
+    # More aggressive approach: remove complete lines that start with option letters
+    option_line_patterns = [
+        r'(?:^|\n)\s*[A-D]\.\s*[^\n\r]*',   # Lines starting with A. B. C. D.
+        r'(?:^|\n)\s*[A-D]\)\s*[^\n\r]*',   # Lines starting with A) B) C) D)
+        r'(?:^|\n)\s*[a-d]\)\s*[^\n\r]*',   # Lines starting with a) b) c) d)
+    ]
+    
+    for pattern in option_line_patterns:
         clean_question = re.sub(pattern, '', clean_question, flags=re.MULTILINE | re.IGNORECASE)
+    
+    # Also remove each individual option text if it still exists (fallback)
+    for option in options:
+        if option and len(option) > 3:  # Only remove substantial text to avoid removing single words
+            # Create pattern to match the option (escape special regex chars)
+            option_pattern = re.escape(option)
+            clean_question = re.sub(option_pattern, '', clean_question, flags=re.IGNORECASE)
     
     # Clean up extra whitespace and newlines
     clean_question = re.sub(r'\n{3,}', '\n\n', clean_question)  # Limit consecutive newlines
@@ -390,12 +466,13 @@ def separate_question_from_options(question_text, options):
     clean_question = re.sub(r'\n[ \t]+', '\n', clean_question)  # Remove leading spaces
     clean_question = re.sub(r'^\s+|\s+$', '', clean_question, flags=re.MULTILINE)  # Trim lines
     
+    # Remove empty lines
+    lines = [line.strip() for line in clean_question.split('\n') if line.strip()]
+    clean_question = '\n'.join(lines)
+    
     # Fix specific issues like truncated words
     clean_question = re.sub(r'AN\d+', 'AND)', clean_question)  # Fix "AN4" -> "AND)"
     clean_question = re.sub(r'OR\d+', 'OR)', clean_question)   # Fix "OR4" -> "OR)"
-    
-    # DO NOT change printf to println - printf is valid in C!
-    # Only fix actual OCR errors, not valid C syntax
     
     return clean_question.strip()
 
