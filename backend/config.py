@@ -3,7 +3,7 @@ import os
 
 # CORS settings - Production domain only
 CORS_ORIGINS = [
-    "https://eye-q-kappa.vercel.app"
+    "https://eye-q-app.vercel.app"
 ]
 
 # File upload settings
