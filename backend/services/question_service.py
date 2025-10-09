@@ -95,7 +95,8 @@ def extract_questions_from_pdf(file):
                         question_obj = {
                             "question": clean_question_text,
                             "options": options,
-                            "correctAnswer": correct_answer_text
+                            "correctAnswer": correct_answer_text,
+                            "type": "multiple-choice"
                         }
                         questions.append(question_obj)
                         logger.info(f"Added question with {len(options)} options, correct answer: {correct_answer_letter} -> '{correct_answer_text[:30]}...': {clean_question_text[:100]}...")
@@ -130,7 +131,8 @@ def extract_questions_from_pdf(file):
                     question_obj = {
                         "question": clean_question_text,
                         "options": options,
-                        "correctAnswer": correct_answer_text
+                        "correctAnswer": correct_answer_text,
+                        "type": "multiple-choice"
                     }
                     questions.append(question_obj)
                     logger.info(f"Added paragraph question with {len(options)} options, correct answer: {correct_answer_letter} -> '{correct_answer_text[:30]}...': {clean_question_text[:100]}...")
@@ -495,7 +497,8 @@ def validate_extracted_questions(questions):
         clean_question = {
             "question": question_text,
             "options": q.get("options", []),
-            "correctAnswer": q.get("correctAnswer", "")
+            "correctAnswer": q.get("correctAnswer", ""),
+            "type": q.get("type", "multiple-choice")
         }
         
         validated.append(clean_question)

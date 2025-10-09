@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import { useAuth } from '../Context/AuthContext';
-import { FiArrowLeft, FiDownload, FiUser, FiCalendar, FiClock, FiX } from 'react-icons/fi';
-import { examAPI } from '../utils/api';
-import Result from './Result';
+import { FiArrowLeft, FiDownload, FiUser, FiCalendar, FiClock } from 'react-icons/fi';
 
 const TeacherResults = () => {
   const { examId } = useParams();
@@ -13,21 +13,22 @@ const TeacherResults = () => {
   const [studentResults, setStudentResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedStudentResult, setSelectedStudentResult] = useState(null);
-  const [showDetailModal, setShowDetailModal] = useState(false);
 
   useEffect(() => {
     const fetchExamResults = async () => {
       if (!user || !examId) return;
       
       try {
-        // Fetch exam details from backend API
-        const exam = await examAPI.getExamDetails(examId);
+        // Fetch exam details
+        const examRef = doc(db, 'examDetails', examId);
+        const examSnap = await getDoc(examRef);
         
-        if (!exam) {
+        if (!examSnap.exists()) {
           setError('Exam not found');
           return;
         }
+        
+        const exam = examSnap.data();
         
         // Check if current user is the exam creator
         if (exam.createdBy !== user.uid) {
@@ -37,10 +38,20 @@ const TeacherResults = () => {
         
         setExamData(exam);
         
-        // Fetch student results from backend API
-        const results = await examAPI.getExamResults(examId);
+        // Fetch student results (this would need to be implemented based on your data structure)
+        // For now, showing placeholder structure
+        const resultsRef = collection(db, 'examResults', examId, 'submissions');
+        const resultsSnap = await getDocs(resultsRef);
         
-        setStudentResults(results || []);
+        const results = [];
+        resultsSnap.forEach((doc) => {
+          results.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        });
+        
+        setStudentResults(results);
         
       } catch (err) {
         console.error('Error fetching exam results:', err);
@@ -56,17 +67,9 @@ const TeacherResults = () => {
   const calculateScore = (answers, questions) => {
     if (!answers || !questions) return 0;
     return answers.reduce((score, answer) => {
-      // Handle both 'text' and 'question' field names for compatibility
-      const question = questions.find(q => 
-        (q.text === answer.question) || (q.question === answer.question)
-      );
+      const question = questions.find(q => q.text === answer.question);
       return question && question.correctAnswer === answer.answer ? score + 1 : score;
     }, 0);
-  };
-
-  const handleViewDetails = (studentResult) => {
-    setSelectedStudentResult(studentResult);
-    setShowDetailModal(true);
   };
 
   const exportResults = () => {
@@ -268,7 +271,10 @@ const TeacherResults = () => {
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           <button 
                             className="text-blue-600 hover:text-blue-900 font-medium"
-                            onClick={() => handleViewDetails(result)}
+                            onClick={() => {
+                              // Implement detailed view functionality
+                              console.log('View detailed results for:', result);
+                            }}
                           >
                             View Details
                           </button>
@@ -281,40 +287,6 @@ const TeacherResults = () => {
             </div>
           )}
         </div>
-
-        {/* Detailed Results Modal */}
-        {showDetailModal && selectedStudentResult && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              {/* Modal Header */}
-              <div className="flex items-center justify-between p-6 border-b">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Detailed Results - {selectedStudentResult.studentName}
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Roll Number: {selectedStudentResult.rollNumber}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                >
-                  <FiX className="h-5 w-5" />
-                </button>
-              </div>
-              
-              {/* Modal Content */}
-              <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-                <Result 
-                  answers={selectedStudentResult.answers} 
-                  questions={examData?.questions} 
-                  shouldSpeak={false}
-                />
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

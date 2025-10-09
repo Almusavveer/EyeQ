@@ -56,6 +56,7 @@ const Review = () => {
             setEditTime(examDate.toTimeString().slice(0, 5));
           }
 
+          console.log("Loaded new exam data for review:", newExamData);
         }
         // Otherwise, fetch existing exam data from Firebase
         else if (examId) {
@@ -165,13 +166,22 @@ const Review = () => {
           examDocData.hasQuestions = true;
           examDocData.questionCount = examData.questions.length;
           examDocData.uploadedFileName = examData.uploadedFileName || "";
+          
+          console.log("Saving questions to database:", {
+            count: examData.questions.length,
+            fileName: examData.uploadedFileName,
+            sampleQuestion: examData.questions[0]?.question
+          });
         } else {
           examDocData.hasQuestions = false;
           examDocData.questionCount = 0;
+          console.log("No questions to save - creating exam without questions");
         }
 
         const docRef = await addDoc(collection(db, "examDetails"), examDocData);
 
+        console.log("New exam created and published with ID:", docRef.id);
+        console.log("Questions saved:", examData.questions ? examData.questions.length : 0);
         
         // Show success message
         const questionCount = examData.questions ? examData.questions.length : 0;
@@ -202,6 +212,9 @@ const Review = () => {
 
         await updateDoc(examRef, updateData);
 
+        console.log("Existing exam updated and published successfully");
+        console.log("Questions updated:", examData.questions ? examData.questions.length : 0);
+        
         // Show success message
         const questionCount = examData.questions ? examData.questions.length : 0;
         if (questionCount > 0) {

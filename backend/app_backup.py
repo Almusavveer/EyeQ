@@ -36,6 +36,7 @@ def extract_students_from_pdf(pdf_file_stream):
                     tables = page.extract_tables()
                     
                     if tables:
+                        print(f"Found {len(tables)} tables on page {page_num + 1}")
                         
                         for table_index, table in enumerate(tables):
                             if not table or len(table) < 2:  # Need at least header + 1 data row
@@ -43,6 +44,7 @@ def extract_students_from_pdf(pdf_file_stream):
                                 
                             # Get headers (first row)
                             headers = [str(cell).strip().lower() if cell else '' for cell in table[0]]
+                            print(f"Table {table_index + 1} headers: {headers}")
                             
                             # Map common header variations to standard fields
                             header_mapping = {}
@@ -66,6 +68,7 @@ def extract_students_from_pdf(pdf_file_stream):
                                 elif any(keyword in header for keyword in ['div', 'division', 'section']):
                                     header_mapping['division'] = i
                             
+                            print(f"Header mapping: {header_mapping}")
                             
                             # Extract student data from remaining rows
                             for row_index, row in enumerate(table[1:], start=1):
@@ -160,6 +163,7 @@ def extract_students_from_pdf(pdf_file_stream):
                                     
                                     if student['rollNumber'] and student['name']:
                                         students.append(student)
+                                        print(f"Extracted student: {student}")
                     
                     # Method 2: Fallback to text extraction if no tables found
                     if not tables:
@@ -168,12 +172,15 @@ def extract_students_from_pdf(pdf_file_stream):
                             students.extend(extract_students_from_text(text))
                             
                 except Exception as page_error:
+                    print(f"Error processing page {page_num + 1}: {page_error}")
                     continue
                     
     except Exception as e:
+        print(f"Error processing PDF: {e}")
         traceback.print_exc()
         return []
 
+    print(f"Total extracted students: {len(students)}")
     return students
 
 def extract_students_from_text(text):
@@ -280,6 +287,7 @@ def extract_questions_from_pdf(pdf_file_stream):
                     tables = page.extract_tables()
                     
                     if tables:
+                        print(f"Found {len(tables)} tables on page {page_num + 1}")
                         
                         for table_index, table in enumerate(tables):
                             if not table or len(table) < 1:
@@ -300,7 +308,8 @@ def extract_questions_from_pdf(pdf_file_stream):
                                             question = {
                                                 "question": cell_text,
                                                 "options": [],
-                                                "correctAnswer": ""
+                                                "correctAnswer": "",
+                                                "type": "multiple-choice"
                                             }
                                             questions.append(question)
                                             break  # Move to next row
@@ -312,9 +321,11 @@ def extract_questions_from_pdf(pdf_file_stream):
                         questions.extend(text_questions)
                         
                 except Exception as page_error:
+                    print(f"Error processing page {page_num + 1}: {page_error}")
                     continue
                     
     except Exception as e:
+        print(f"Error processing PDF for questions: {e}")
         traceback.print_exc()
         return []
 
@@ -327,6 +338,7 @@ def extract_questions_from_pdf(pdf_file_stream):
             seen_questions.add(question_text)
             unique_questions.append(q)
 
+    print(f"Successfully extracted {len(unique_questions)} unique questions")
     return unique_questions
 
 def is_question_text(text):
@@ -376,7 +388,8 @@ def extract_questions_from_text(text):
             current_question = {
                 "question": line,
                 "options": [],
-                "correctAnswer": ""
+                "correctAnswer": "",
+                "type": "multiple-choice"
             }
         elif current_question:
             # This might be an option or part of the question
@@ -437,6 +450,8 @@ def extract_students():
         }), 200
         
     except Exception as e:
+        print(f"Unexpected error in extract_students: {e}")
+        print(f"Error type: {type(e)}")
         traceback.print_exc()
         return jsonify({"error": "Internal server error occurred while processing the file"}), 500
 
@@ -486,6 +501,8 @@ def upload_file():
         }), 200
         
     except Exception as e:
+        print(f"Unexpected error in upload_file: {e}")
+        print(f"Error type: {type(e)}")
         traceback.print_exc()
         return jsonify({"error": "Internal server error occurred while processing the file"}), 500
 

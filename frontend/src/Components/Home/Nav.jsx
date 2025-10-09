@@ -3,7 +3,6 @@ import { signOut } from "firebase/auth";
 import { auth } from "../../firebase";
 import { useNavigate } from "react-router";
 import { useState, useEffect, useRef } from "react";
-import { clearNavigationHistory } from "../../utils/navigationGuard";
 
 const Nav = () => {
   const navigate = useNavigate();
@@ -13,11 +12,6 @@ const Nav = () => {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      
-      // Clear navigation history to prevent back button access
-      clearNavigationHistory();
-      
-      // Navigate to login with replace to prevent back navigation
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);

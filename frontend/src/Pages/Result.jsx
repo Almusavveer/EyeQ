@@ -1,17 +1,13 @@
 import React, { useEffect } from "react";
 import { speakText } from "../utils/speechUtils";
 
-const Result = ({ answers, questions, shouldSpeak = true }) => {
+const Result = ({ answers, questions }) => {
   const score = answers.reduce((acc, a) => {
-    // Handle both 'text' and 'question' field names for compatibility
-    const q = questions.find(q => (q.text === a.question) || (q.question === a.question));
-    const isCorrect = q && q.correctAnswer === a.answer;
-    return isCorrect ? acc + 1 : acc;
+    const q = questions.find(q => q.text === a.question);
+    return q && q.correctAnswer === a.answer ? acc + 1 : acc;
   }, 0);
 
   useEffect(() => {
-    if (!shouldSpeak) return; // Don't speak if used in teacher dashboard
-    
     const announceResult = async () => {
       try {
         const resultText = `Exam completed. Your score is ${score} out of ${questions.length} questions.`;
@@ -34,7 +30,7 @@ const Result = ({ answers, questions, shouldSpeak = true }) => {
     };
 
     announceResult();
-  }, [score, questions.length, shouldSpeak]);
+  }, [score, questions.length]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
@@ -55,8 +51,7 @@ const Result = ({ answers, questions, shouldSpeak = true }) => {
         {/* Results List */}
         <div className="space-y-4 sm:space-y-6">
           {answers.map((a, i) => {
-            // Handle both 'text' and 'question' field names for compatibility
-            const q = questions.find(q => (q.text === a.question) || (q.question === a.question));
+            const q = questions.find(q => q.text === a.question);
             const correct = q?.correctAnswer === a.answer;
             return (
               <div key={i} className="bg-white rounded-lg shadow-sm border p-4 sm:p-6">

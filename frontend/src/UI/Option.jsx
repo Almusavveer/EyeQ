@@ -1,16 +1,15 @@
 import { signInWithPopup, signInWithRedirect, getRedirectResult } from "firebase/auth";
 import { GoogleAuthProvider } from "firebase/auth";
+import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { FaFacebook } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
 import { FiFacebook } from "react-icons/fi";
-import { auth } from "../firebase";
-import { useNavigate, useLocation } from "react-router";
+import { auth, db } from "../firebase";
+import { useNavigate } from "react-router";
 import { useEffect } from "react";
-import { userAPI } from "../utils/api";
 
 const Option = ({error, setError}) => {
-  const navigate = useNavigate();
-  const location = useLocation();
+  const navigate = useNavigate()
   
   // Check for redirect result on component mount
   useEffect(() => {
@@ -20,10 +19,7 @@ const Option = ({error, setError}) => {
         if (result) {
           const user = result.user;
           await handleUserRegistration(user);
-          
-          // Redirect to the page they were trying to access, or default to home
-          const redirectTo = location.state?.from?.pathname || "/home";
-          navigate(redirectTo, { replace: true });
+          navigate("/home");
         }
       } catch (err) {
         setError(err.message);
@@ -31,28 +27,22 @@ const Option = ({error, setError}) => {
     };
     
     handleRedirectResult();
-  }, [navigate, setError, location]);
+  }, [navigate, setError]);
 
   const handleUserRegistration = async (user) => {
-    // Check if user already exists in backend, create if not
-    try {
-      const existingUser = await userAPI.getUser(user.uid);
-      
-      if (!existingUser) {
-        // User doesn't exist, create new user record
-        const userData = {
-          uid: user.uid,
-          email: user.email,
-          name: user.displayName,
-          role: "teacher" // default role
-        };
-        
-        await userAPI.createUser(userData);
-      } else {
-      }
-    } catch (error) {
-      console.error("Error handling user registration:", error);
-      // Continue anyway, authentication was successful
+    // Check if Firestore doc already exists
+    const userRef = doc(db, "users", user.uid);
+    const docSnap = await getDoc(userRef);
+
+    if (!docSnap.exists()) {
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email,
+        name: user.displayName,
+        role: "teacher", // default role
+        createdAt: serverTimestamp(),
+      });
+      console.log("Signup with google");
     }
   };
 
@@ -65,15 +55,13 @@ const Option = ({error, setError}) => {
         const result = await signInWithPopup(auth, provider);
         const user = result.user;
         await handleUserRegistration(user);
-        
-        // Redirect to the page they were trying to access, or default to home
-        const redirectTo = location.state?.from?.pathname || "/home";
-        navigate(redirectTo, { replace: true });
+        navigate("/home");
       } catch (popupError) {
         // If popup fails due to COOP or other issues, fall back to redirect
         if (popupError.code === 'auth/popup-blocked' || 
             popupError.code === 'auth/popup-closed-by-user' ||
             popupError.message.includes('Cross-Origin-Opener-Policy')) {
+          console.log("Popup blocked, using redirect method");
           await signInWithRedirect(auth, provider);
         } else {
           throw popupError;

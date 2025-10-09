@@ -91,11 +91,14 @@ const PdfUpload = ({
       // Notify parent component that upload started
       onUploadStart?.(file);
       
+      console.log('📄 Uploading PDF to backend:', file.name);
       
       const questions = await uploadPdfToBackend(file);
       
       if (questions && questions.length > 0) {
         setExtractedQuestions(questions);
+        console.log('✅ Successfully extracted questions:', questions.length);
+        console.log('📋 Questions:', questions);
         
         // Notify parent component with extracted questions
         onQuestionsExtracted?.(questions, file.name);

@@ -1,12 +1,13 @@
 import { useEffect, useState, useRef } from "react";
 import React from "react";
 import { useParams } from "react-router";
+import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../firebase";
 import { QUESTIONS } from "../data";
 import Question from "../UI/Question";
 import AnswerList from "../Components/AnswerList";
 import Result from "./Result";
 import { speakText, preprocessTextForSpeech, normalizeSpeechInput } from "../utils/speechUtils";
-import { examAPI, studentAPI } from "../utils/api";
 
 const ExamPage = () => {
   const { examId } = useParams();
@@ -24,8 +25,6 @@ const ExamPage = () => {
   const [isListening, setIsListening] = useState(false);
   const [speechError, setSpeechError] = useState("");
   const [questionReadingComplete, setQuestionReadingComplete] = useState(false);
-  const [isNavigating, setIsNavigating] = useState(false); // Flag to prevent double reading during navigation
-  const [initialInstructionsGiven, setInitialInstructionsGiven] = useState(false); // Track if initial instructions were already given
   const recognitionRef = useRef(null);
   
   // Verification states
@@ -41,11 +40,10 @@ const ExamPage = () => {
   const [timeRemaining, setTimeRemaining] = useState(null);
   const [examStartTime, setExamStartTime] = useState(null);
   const [instructionsComplete, setInstructionsComplete] = useState(false);
-  // Removed per-question timer states (no longer needed):
-  // const [questionTimeRemaining, setQuestionTimeRemaining] = useState(null);
-  // const [timePerQuestion, setTimePerQuestion] = useState(null);
+  const [questionTimeRemaining, setQuestionTimeRemaining] = useState(null);
+  const [timePerQuestion, setTimePerQuestion] = useState(null);
   const timerRef = useRef(null);
-  // const questionTimerRef = useRef(null); // No longer needed
+  const questionTimerRef = useRef(null);
 
   // Verification function
   const handleVerification = async (e) => {
@@ -60,6 +58,7 @@ const ExamPage = () => {
     setVerificationError("");
 
     try {
+      console.log("🔍 Verifying student with roll number:", rollNumber);
       
       // First, fetch exam details to get the creator
       if (!examId) {
@@ -68,15 +67,16 @@ const ExamPage = () => {
         return;
       }
 
-      // Get exam details from backend
-      const examData = await examAPI.getExamDetails(examId);
-      
-      if (!examData) {
+      const examRef = doc(db, "examDetails", examId);
+      const examSnap = await getDoc(examRef);
+
+      if (!examSnap.exists()) {
         setVerificationError("Exam not found. Contact your faculty.");
         setVerifying(false);
         return;
       }
 
+      const examData = examSnap.data();
       const creatorId = examData.createdBy;
 
       if (!creatorId) {
@@ -85,15 +85,20 @@ const ExamPage = () => {
         return;
       }
 
-      // Check if student exists in the exam creator's student list using backend API
-      const studentDetails = await studentAPI.getStudentDetails(creatorId, rollNumber.trim());
+      // Check if student exists in the exam creator's student list
+      const studentsRef = collection(db, "users", creatorId, "students");
+      const q = query(studentsRef, where("rollNumber", "==", rollNumber.trim()));
+      const querySnapshot = await getDocs(q);
       
-      if (studentDetails) {
+      if (!querySnapshot.empty) {
         // Student found in creator's database
+        const studentDetails = querySnapshot.docs[0].data();
+        console.log("✅ Student verified:", studentDetails);
         setStudentData(studentDetails);
         setIsVerified(true);
       } else {
         // Student not found
+        console.log("❌ Student not found in exam creator's database");
         setVerificationError("You are not allowed for this exam. Contact your faculty.");
       }
     } catch (error) {
@@ -108,6 +113,7 @@ const ExamPage = () => {
   useEffect(() => {
     const fetchExamData = async () => {
       if (!examId) {
+        console.log("ℹ️ No examId provided, using default questions");
         // No examId provided, use default questions
         setQuestions(QUESTIONS);
         setLoading(false);
@@ -120,19 +126,23 @@ const ExamPage = () => {
         return;
       }
 
+      console.log("🔍 Fetching exam data for ID:", examId);
       try {
         setLoading(true);
-        
-        // Get exam data from backend API
-        const data = await examAPI.getExamDetails(examId);
+        const examRef = doc(db, "examDetails", examId);
+        const examSnap = await getDoc(examRef);
 
-        if (data) {
+        if (examSnap.exists()) {
+          const data = examSnap.data();
+          console.log("✅ Fetched exam data:", data);
+          console.log("✅ Questions from database:", data.questions);
+          console.log("✅ First question structure:", data.questions?.[0]);
           setExamData(data);
           
           // Transform questions to match expected format
           const transformedQuestions = (data.questions || []).map(q => ({
             ...q,
-            text: q.question || q.text, // Map 'question' to 'text' or use existing 'text'
+            text: q.question, // Map 'question' to 'text'
             options: q.options && q.options.length > 0 ? q.options : [
               q.answer || "Answer not available",
               "Option B",
@@ -141,8 +151,10 @@ const ExamPage = () => {
             ] // Generate options if missing
           }));
           
+          console.log("✅ Transformed questions:", transformedQuestions[0]);
           setQuestions(transformedQuestions);
         } else {
+          console.log("❌ Exam document not found");
           setError("Exam not found");
           // Fallback to default questions
           setQuestions(QUESTIONS);
@@ -161,19 +173,18 @@ const ExamPage = () => {
   }, [examId, isVerified]);
 
   useEffect(() => {
-    if (!loading && !finished && questions[current] && !isNavigating) {
-      // Provide orientation announcement ONLY for the very first time on question 1
-      if (current === 0 && !initialInstructionsGiven) {
+    if (!loading && !finished && questions[current]) {
+      // Provide orientation announcement for first question
+      if (current === 0) {
         const announceOrientation = async () => {
           try {
             const durationText = examData?.examDuration ? ` You have ${examData.examDuration} minutes to complete this exam.` : '';
-            await speakText(`Welcome to the exam. You are on question ${current + 1} of ${questions.length}.${durationText} I will read the question and options. To interact with the exam, simply click anywhere on the screen to activate the microphone. Speak your answer to select an option, then say "confirm" to submit. If you want to change your selection, say "change" and speak a new option. You can also say "repeat" anytime to hear the question again. To navigate, say "next" or "skip" to go forward, or "previous" or "back" to go back. The timer will start now.`, {
+            await speakText(`Welcome to the exam. You are on question ${current + 1} of ${questions.length}.${durationText} I will read the question and options. To interact with the exam, simply click anywhere on the screen to activate the microphone. Speak your answer to select an option, then say "confirm" to submit. If you want to change your selection, say "change" and speak a new option. You can also say "repeat" anytime to hear the question again. The timer will start now.`, {
               rate: 0.9,
               lang: "en-US"
             });
             // Mark instructions as complete to start timer
             setInstructionsComplete(true);
-            setInitialInstructionsGiven(true);
             // Then read the first question
             setTimeout(() => speakQuestion(questions[current]), 1000);
           } catch (error) {
@@ -183,17 +194,11 @@ const ExamPage = () => {
         };
         announceOrientation();
       } else {
-        // For all other cases (including revisiting question 1), just read the question
-        setTimeout(() => speakQuestion(questions[current]), 300);
+        speakQuestion(questions[current]);
       }
     }
-    
-    // Reset navigation flag after question change is processed
-    if (isNavigating) {
-      setTimeout(() => setIsNavigating(false), 500);
-    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [current, finished, loading, isNavigating]);
+  }, [current, finished, loading]);
 
   // Initialize timer when instructions are complete
   useEffect(() => {
@@ -201,34 +206,34 @@ const ExamPage = () => {
       const startTime = Date.now();
       setExamStartTime(startTime);
       const totalSeconds = examData.examDuration * 60;
+      const secondsPerQuestion = Math.floor(totalSeconds / questions.length);
       
       setTimeRemaining(totalSeconds);
-      // Removed per-question timer calculation
-      // setTimePerQuestion(secondsPerQuestion);
-      // setQuestionTimeRemaining(secondsPerQuestion);
+      setTimePerQuestion(secondsPerQuestion);
+      setQuestionTimeRemaining(secondsPerQuestion);
+      
+      console.log("⏱️ Timer started:", {
+        totalMinutes: examData.examDuration,
+        questionsCount: questions.length,
+        secondsPerQuestion
+      });
     }
   }, [instructionsComplete, examData, timeRemaining, questions.length]);
 
-  // Per-question timer countdown effect - DISABLED
-  // Now using only total exam timer, not per-question timing
-  /*
+  // Per-question timer countdown effect
   useEffect(() => {
     if (questionTimeRemaining !== null && questionTimeRemaining > 0 && !finished && instructionsComplete) {
       questionTimerRef.current = setInterval(() => {
         setQuestionTimeRemaining(prev => {
           if (prev <= 1) {
             // Time's up for this question - auto advance
+            console.log("⏰ Question time up! Auto-advancing...");
             
             // Save current answer (even if empty) and move to next question
             const newAnswers = [...answers];
-            const currentQuestion = questions[current];
-            const answerText = selectedOption !== null 
-              ? currentQuestion?.options[selectedOption] 
-              : "Not answered (time expired)";
-
             newAnswers[current] = {
-              question: currentQuestion?.text || currentQuestion?.question,
-              answer: answerText,
+              question: questions[current]?.text || questions[current]?.question,
+              answer: selectedOption || "Not answered (time expired)",
               isCorrect: false // Mark as incorrect since time expired
             };
             setAnswers(newAnswers);
@@ -270,16 +275,13 @@ const ExamPage = () => {
       };
     }
   }, [questionTimeRemaining, finished, instructionsComplete, current, questions, selectedOption, answers, timePerQuestion]);
-  */
 
-  // Reset question timer when moving to a new question manually - DISABLED
-  /*
+  // Reset question timer when moving to a new question manually
   useEffect(() => {
     if (timePerQuestion && instructionsComplete) {
       setQuestionTimeRemaining(timePerQuestion);
     }
   }, [current, timePerQuestion, instructionsComplete]);
-  */
 
   // Timer countdown effect
   useEffect(() => {
@@ -288,6 +290,7 @@ const ExamPage = () => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
             // Time's up - auto submit exam
+            console.log("⏰ Time's up! Auto-submitting exam...");
             handleSubmitExam();
             return 0;
           }
@@ -309,189 +312,23 @@ const ExamPage = () => {
       if (timerRef.current) {
         clearInterval(timerRef.current);
       }
-      // Removed questionTimerRef cleanup (no longer used)
+      if (questionTimerRef.current) {
+        clearInterval(questionTimerRef.current);
+      }
     };
   }, []);
 
-  // Announce exam completion when finished
-  useEffect(() => {
-    if (finished) {
-      const announceCompletion = async () => {
-        try {
-          await speakText(`Exam completed successfully. You answered ${answers.length} out of ${questions.length} questions. Thank you for taking the exam.`, {
-            rate: 0.8,
-            lang: "en-US",
-            pitch: 1,
-            volume: 1
-          });
-        } catch (error) {
-          console.error("Failed to speak completion:", error);
-        }
-      };
-      announceCompletion();
-    }
-  }, [finished, answers.length, questions.length]);
-
   // Exam submission handler
-  const handleSubmitExam = async () => {
+  const handleSubmitExam = () => {
     // Clear timers
     if (timerRef.current) {
       clearInterval(timerRef.current);
     }
-    // Removed questionTimerRef cleanup (no longer used)
-    
-    // Calculate time taken
-    const timeTaken = examStartTime ? Math.round((Date.now() - examStartTime) / 60000) : 0;
-    
-    // Prepare exam results for submission
-    const examResults = {
-      studentId: studentData?.rollNumber || studentData?.studentId || "student_" + Date.now(),
-      studentName: studentData?.name || "Unknown Student",
-      examId: examData?.examId || examId || "exam_" + Date.now(),
-      examTitle: examData?.examTitle || examData?.title || "Exam",
-      answers: answers,
-      questions: questions,
-      examDuration: examData?.examDuration,
-      timeTaken: timeTaken
-    };
-    
-    try {
-      // Submit results using API utility
-      const result = await examAPI.submitExamResults(examResults);
-    } catch (error) {
-      console.error('❌ Error submitting exam results:', error);
-      // Continue with exam completion even if submission fails
+    if (questionTimerRef.current) {
+      clearInterval(questionTimerRef.current);
     }
-    
     // Complete the exam
     setFinished(true);
-  };
-
-  // Navigation handlers
-  const handleNextQuestion = async () => {
-    // Save current answer if one is selected
-    if (selectedOption !== null) {
-      const currentQuestion = questions[current];
-      const answerText = currentQuestion?.options[selectedOption];
-      const nextAnswers = [
-        ...answers.slice(0, current),
-        {
-          question: currentQuestion?.text || currentQuestion?.question,
-          answer: answerText
-        },
-        ...answers.slice(current + 1)
-      ];
-      setAnswers(nextAnswers);
-    }
-
-    // Move to next question
-    if (current < questions.length - 1) {
-      setIsNavigating(true); // Set flag to prevent double reading
-      const nextQuestion = current + 1;
-      setCurrent(nextQuestion);
-      
-      // Reset states for next question and restore any previous answer
-      const nextAnswer = answers[nextQuestion];
-      if (nextAnswer && typeof nextAnswer === 'object' && nextAnswer.answer) {
-        // Find the index of the answer in the options
-        const currentQuestion = questions[nextQuestion];
-        const answerIndex = currentQuestion?.options?.indexOf(nextAnswer.answer);
-        setSelectedOption(answerIndex >= 0 ? answerIndex : null);
-      } else {
-        setSelectedOption(null);
-      }
-      
-      setSpeechFeedback("");
-      setSpeechError("");
-      setQuestionReadingComplete(false);
-      
-      // Don't reset question timer when navigating - let it continue from where it left off
-      // The overall exam timer continues, question timer is paused during navigation
-      // if (timePerQuestion) {
-      //   setQuestionTimeRemaining(timePerQuestion);
-      // }
-      
-      // Announce new question and then read it
-      try {
-        await speakText(`Question ${nextQuestion + 1} of ${questions.length}`, {
-          rate: 0.8,
-          pitch: 1,
-          volume: 0.8
-        });
-        
-        // Read the question after a brief pause, then restart speech recognition
-        setTimeout(async () => {
-          await speakQuestion(questions[nextQuestion]);
-          restartSpeechRecognition();
-        }, 500);
-      } catch (error) {
-        console.error("Failed to announce next question:", error);
-        restartSpeechRecognition();
-      }
-    }
-  };
-
-  const handlePreviousQuestion = async () => {
-    // Save current answer if one is selected
-    if (selectedOption !== null) {
-      const currentQuestion = questions[current];
-      const answerText = currentQuestion?.options[selectedOption];
-      const nextAnswers = [
-        ...answers.slice(0, current),
-        {
-          question: currentQuestion?.text || currentQuestion?.question,
-          answer: answerText
-        },
-        ...answers.slice(current + 1)
-      ];
-      setAnswers(nextAnswers);
-    }
-
-    // Move to previous question
-    if (current > 0) {
-      setIsNavigating(true); // Set flag to prevent double reading
-      const prevQuestion = current - 1;
-      setCurrent(prevQuestion);
-      
-      // Reset states for previous question and restore previous answer
-      const previousAnswer = answers[prevQuestion];
-      if (previousAnswer && typeof previousAnswer === 'object' && previousAnswer.answer) {
-        // Find the index of the answer in the options
-        const currentQuestion = questions[prevQuestion];
-        const answerIndex = currentQuestion?.options?.indexOf(previousAnswer.answer);
-        setSelectedOption(answerIndex >= 0 ? answerIndex : null);
-      } else {
-        setSelectedOption(null);
-      }
-      
-      setSpeechFeedback("");
-      setSpeechError("");
-      setQuestionReadingComplete(false);
-      
-      // Don't reset question timer when navigating - let it continue from where it left off
-      // The overall exam timer continues, question timer is paused during navigation  
-      // if (timePerQuestion) {
-      //   setQuestionTimeRemaining(timePerQuestion);
-      // }
-      
-      // Announce previous question and then read it
-      try {
-        await speakText(`Going back to question ${prevQuestion + 1} of ${questions.length}`, {
-          rate: 0.8,
-          pitch: 1,
-          volume: 0.8
-        });
-        
-        // Read the question after a brief pause, then restart speech recognition
-        setTimeout(async () => {
-          await speakQuestion(questions[prevQuestion]);
-          restartSpeechRecognition();
-        }, 500);
-      } catch (error) {
-        console.error("Failed to announce previous question:", error);
-        restartSpeechRecognition();
-      }
-    }
   };
 
   // Format time remaining for display
@@ -500,16 +337,6 @@ const ExamPage = () => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
-
-  // Helper function to safely restart speech recognition after navigation
-  const restartSpeechRecognition = () => {
-    // Wait for any speech synthesis to complete before restarting recognition
-    setTimeout(() => {
-      if (questionReadingComplete && !isListening) {
-        startListening();
-      }
-    }, 1000); // Longer delay to ensure speech synthesis is complete
   };
 
   // Speech recognition functions
@@ -539,6 +366,7 @@ const ExamPage = () => {
     setSpeechError("");
 
     recognition.onstart = () => {
+      console.log("Speech recognition started");
       setSpeechFeedback("Listening...");
     };
 
@@ -547,6 +375,7 @@ const ExamPage = () => {
       const transcript = results[0].transcript;
       const confidence = results[0].confidence;
       
+      console.log("Speech result:", transcript, "Confidence:", confidence);
       
       // Process the speech result
       onSpeech(transcript);
@@ -587,6 +416,7 @@ const ExamPage = () => {
     };
 
     recognition.onend = () => {
+      console.log("Speech recognition ended");
       setIsListening(false);
     };
 
@@ -635,42 +465,22 @@ const ExamPage = () => {
       // Preprocess the question text for better pronunciation of technical terms
       const processedQuestionText = preprocessTextForSpeech(q.text);
       
-      // Check if this question already has an answer
-      const hasSelectedAnswer = selectedOption !== null;
+      // Create a more natural question reading
+      const questionText = `Question: ${processedQuestionText}`;
+      const optionsText = q.options && q.options.length > 0 
+        ? `Your options are: ${q.options.map((opt, idx) => `Option ${idx + 1}: ${preprocessTextForSpeech(opt)}`).join(". ")}`
+        : "";
       
-      if (hasSelectedAnswer) {
-        // For questions with existing answers, provide shorter context
-        const questionText = `Question: ${processedQuestionText}`;
-        const selectedAnswerText = q.options[selectedOption];
-        const currentSelectionText = `You previously selected: ${preprocessTextForSpeech(selectedAnswerText)}`;
-        const promptText = `Say "confirm" to keep this answer, or speak a different option to change it.`;
-        
-        const fullText = `${questionText}. ${currentSelectionText}. ${promptText}`;
-        
-        
-        await speakText(fullText, {
-          rate: 0.8,
-          pitch: 1,
-          volume: 1,
-          lang: 'en-US'
-        });
-      } else {
-        // For new questions, provide full options
-        const questionText = `Question: ${processedQuestionText}`;
-        const optionsText = q.options && q.options.length > 0 
-          ? `Your options are: ${q.options.map((opt, idx) => `Option ${idx + 1}: ${preprocessTextForSpeech(opt)}`).join(". ")}`
-          : "";
-        
-        const fullText = `${questionText}. ${optionsText}. Please speak your answer.`;
-        
-        
-        await speakText(fullText, {
-          rate: 0.8,     // Slower for better comprehension
-          pitch: 1,      // Normal pitch
-          volume: 1,     // Full volume
-          lang: 'en-US'  // US English for better technical pronunciation
-        });
-      }
+      const fullText = `${questionText}. ${optionsText}. Please speak your answer.`;
+      
+      console.log("Speaking:", fullText);
+      
+      await speakText(fullText, {
+        rate: 0.8,     // Slower for better comprehension
+        pitch: 1,      // Normal pitch
+        volume: 1,     // Full volume
+        lang: 'en-US'  // US English for better technical pronunciation
+      });
       
       // Set completion flag when reading is finished
       setQuestionReadingComplete(true);
@@ -695,6 +505,7 @@ const ExamPage = () => {
     const normalizedSpeech = normalizeSpeechInput(speech);
     const ans = normalizedSpeech.toLowerCase().trim();
     
+    console.log("Speech normalization:", { original: speech, normalized: normalizedSpeech });
     
     let match = null;
     let highestConfidence = 0;
@@ -770,10 +581,17 @@ const ExamPage = () => {
       }
     });
 
+    console.log("Speech interpretation:", { 
+      spoken: speech, 
+      matched: match, 
+      confidence: highestConfidence 
+    });
+
     return match || speech;
   };
 
   const onSpeech = async (spoken) => {
+    console.log("Speech received:", spoken);
     
     const q = questions[current];
     if (!q) return;
@@ -782,41 +600,9 @@ const ExamPage = () => {
     
     // Handle special commands first
     if (lower.includes("repeat") || lower.includes("again")) {
+      console.log("Repeating question...");
       setSpeechFeedback("Repeating question...");
       await speakQuestion(q);
-      return;
-    }
-    
-    // Handle navigation commands
-    if (lower.includes("next") || lower.includes("skip")) {
-      setSpeechFeedback("Moving to next question...");
-      
-      // Stop speech recognition first to prevent interference
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-        setIsListening(false);
-      }
-      
-      // Small delay to ensure recognition is stopped before speech synthesis
-      setTimeout(() => {
-        handleNextQuestion();
-      }, 200);
-      return;
-    }
-    
-    if (lower.includes("previous") || lower.includes("back")) {
-      setSpeechFeedback("Going back to previous question...");
-      
-      // Stop speech recognition first to prevent interference
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-        setIsListening(false);
-      }
-      
-      // Small delay to ensure recognition is stopped before speech synthesis
-      setTimeout(() => {
-        handlePreviousQuestion();
-      }, 200);
       return;
     }
     
@@ -829,35 +615,21 @@ const ExamPage = () => {
         { question: q.text, answer: selectedOptionText },
       ];
       setAnswers(nextAnswers);
+      setSpeechFeedback("Answer confirmed! Moving to next question...");
       
-      const next = current + 1;
-      const isLastQuestion = next >= questions.length;
-      
-      if (isLastQuestion) {
-        setSpeechFeedback("Answer confirmed! Submitting exam...");
-        try {
-          await speakText("Answer submitted successfully. Submitting your exam now.", {
-            rate: 0.9,
-            lang: "en-US"
-          });
-        } catch (error) {
-          console.error("Failed to speak submission:", error);
-        }
-      } else {
-        setSpeechFeedback("Answer confirmed! Moving to next question...");
-        try {
-          await speakText("Answer submitted successfully. Moving to next question.", {
-            rate: 0.9,
-            lang: "en-US"
-          });
-        } catch (error) {
-          console.error("Failed to speak submission:", error);
-        }
+      try {
+        await speakText("Answer submitted successfully. Moving to next question.", {
+          rate: 0.9,
+          lang: "en-US"
+        });
+      } catch (error) {
+        console.error("Failed to speak submission:", error);
       }
       
-      // Reset and move to next question or finish exam
+      // Reset and move to next question
       setSelectedOption(null);
       setQuestionReadingComplete(false);
+      const next = current + 1;
       if (next < questions.length) {
         setCurrent(next);
       } else {
@@ -883,6 +655,7 @@ const ExamPage = () => {
 
     // Try to interpret as an answer selection
     const interpretedAnswer = interpret(spoken, q);
+    console.log("Interpreted answer:", interpretedAnswer);
     
     // Check if this is a valid option
     if (q.options && q.options.includes(interpretedAnswer)) {
@@ -989,6 +762,25 @@ const ExamPage = () => {
   }
 
   if (finished) {
+    // Add speech announcement for completion
+    const announceCompletion = async () => {
+      try {
+        await speakText(`Exam completed successfully. You answered ${answers.length} out of ${questions.length} questions. Thank you for taking the exam.`, {
+          rate: 0.8,
+          lang: "en-US",
+          pitch: 1,
+          volume: 1
+        });
+      } catch (error) {
+        console.error("Failed to speak completion:", error);
+      }
+    };
+
+    // Announce completion when component mounts
+    React.useEffect(() => {
+      announceCompletion();
+    }, []);
+
     return (
       <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8 flex items-center justify-center">
         <div className="max-w-md mx-auto text-center space-y-6 bg-white rounded-xl shadow-lg p-8">
@@ -1012,12 +804,12 @@ const ExamPage = () => {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
             <p><strong>Questions Answered:</strong> {answers.length} of {questions.length}</p>
             <p><strong>Exam:</strong> {examData?.examTitle || "Exam"}</p>
-            <p><strong>Time Taken:</strong> {examStartTime ? Math.round((Date.now() - examStartTime) / 60000) : 0} minutes</p>
           </div>
         </div>
       </div>
     );
   }
+  console.log(current);
 
   const q = questions[current];
   return (
@@ -1026,7 +818,7 @@ const ExamPage = () => {
       onClick={handleScreenClick}
       role="button"
       tabIndex={0}
-      aria-label="Click anywhere on the screen to activate speech recognition. Speak your answer, say confirm to submit, say change to select again, or say next, skip, previous, or back to navigate."
+      aria-label="Click anywhere on the screen to activate speech recognition. Speak your answer, say confirm to submit, or say change to select again."
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
@@ -1126,21 +918,87 @@ const ExamPage = () => {
           
           {/* Right side - Timer */}
           <div className="flex flex-col items-center sm:items-end gap-2 sm:w-40">
-            {/* Timer Display - Now showing only total exam time */}
+            {/* Timer Display */}
             {timeRemaining !== null && (
               <div className="bg-white border-2 border-gray-200 rounded-xl p-4 shadow-lg min-w-[120px]">
                 <div className="text-center">
-                  {/* Total Exam Time */}
-                  <div>
-                    <div className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">Total Time</div>
-                    <div className={`text-lg sm:text-xl font-bold tabular-nums ${
-                      timeRemaining <= 60 ? 'text-red-600' : 
-                      timeRemaining <= 300 ? 'text-orange-600' : 
-                      'text-blue-600'
-                    }`}>
-                      {formatTime(timeRemaining)}
+                  {/* Question Time */}
+                  {questionTimeRemaining !== null && (
+                    <div>
+                      <div className="text-xs text-blue-600 font-medium uppercase tracking-wide mb-1">Question Time</div>
+                      <div className={`text-lg sm:text-xl font-bold tabular-nums ${
+                        questionTimeRemaining <= 10 ? 'text-red-600' : 
+                        questionTimeRemaining <= 30 ? 'text-orange-600' : 
+                        'text-blue-600'
+                      }`}>
+                        {formatTime(questionTimeRemaining)}
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  
+                  {/* Circular Progress Ring for Question Time */}
+                  {examData?.examDuration && questionTimeRemaining !== null && timePerQuestion && (
+                    <div className="relative w-12 h-12 mx-auto">
+                      <svg className="w-12 h-12 transform -rotate-90" viewBox="0 0 48 48">
+                        {/* Background circle */}
+                        <circle
+                          cx="24"
+                          cy="24"
+                          r="20"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                          className="text-gray-200"
+                        />
+                        {/* Progress circle for question time */}
+                        <circle
+                          cx="24"
+                          cy="24"
+                          r="20"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                          strokeDasharray={`${2 * Math.PI * 20}`}
+                          strokeDashoffset={`${2 * Math.PI * 20 * (1 - Math.max(0, questionTimeRemaining / timePerQuestion))}`}
+                          className={`transition-all duration-1000 ${
+                            questionTimeRemaining <= 10 ? 'text-red-500' : 
+                            questionTimeRemaining <= 30 ? 'text-orange-500' : 
+                            'text-blue-500'
+                          }`}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      {/* Animated hourglass icon in center */}
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="relative">
+                          <span 
+                            className={`text-sm inline-block ${
+                              questionTimeRemaining <= 10 
+                                ? 'animate-bounce' 
+                                : ''
+                            }`}
+                            style={{
+                              animation: questionTimeRemaining > 30 
+                                ? 'rotate360 1s linear infinite' 
+                                : questionTimeRemaining > 10 
+                                ? 'pulse 1.5s ease-in-out infinite'
+                                : 'bounce 0.6s infinite',
+                              transformOrigin: 'center center'
+                            }}
+                          >
+                            ⏳
+                          </span>
+                          
+                          <style jsx>{`
+                            @keyframes rotate360 {
+                              0% { transform: rotate(0deg); }
+                              100% { transform: rotate(360deg); }
+                            }
+                          `}</style>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -1203,14 +1061,9 @@ const ExamPage = () => {
             )}
             
             {!isListening && !speechError && (
-              <div className="text-gray-500 text-xs sm:text-sm px-2 text-center">
+              <div className="text-gray-500 text-xs sm:text-sm px-2">
                 {questionReadingComplete ? (
-                  <div className="space-y-1">
-                    <div>🎤 Click anywhere to speak your answer</div>
-                    <div className="text-xs opacity-75">
-                      Say: "next", "previous", "repeat", "confirm", or "change"
-                    </div>
-                  </div>
+                  <>🎤 Click anywhere to speak your answer</>
                 ) : (
                   <>🔊 Listening to question... Please wait</>
                 )}
@@ -1228,58 +1081,6 @@ const ExamPage = () => {
               </p>
             </div>
           )}
-
-          {/* Navigation Controls - Voice Only */}
-          <div className="flex justify-between items-center gap-4 px-2 sm:px-0 pt-2 sm:pt-4">
-            {/* Previous Button - Voice Control Only */}
-            <div
-              className={`
-                flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-medium transition-all duration-200 cursor-default
-                ${current === 0 
-                  ? 'bg-gray-200 text-gray-400' 
-                  : 'bg-gray-600 text-white shadow-md'
-                }
-              `}
-              aria-label="Previous question (voice command only)"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              <span className="text-sm sm:text-base">Previous</span>
-            </div>
-
-            {/* Question Counter */}
-            <div className="text-center px-2">
-              <div className="text-sm sm:text-base font-medium text-gray-700">
-                Question {current + 1} of {questions.length}
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
-                <div 
-                  className="bg-[#FBC02D] h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${((current + 1) / questions.length) * 100}%` }}
-                ></div>
-              </div>
-            </div>
-
-            {/* Next/Submit Button - Voice Control Only */}
-            <div
-              className="flex items-center gap-2 px-4 py-2 sm:px-6 sm:py-3 bg-[#FBC02D] text-black font-medium rounded-lg shadow-md cursor-default"
-              aria-label={current === questions.length - 1 ? "Submit exam (voice command only)" : "Next question (voice command only)"}
-            >
-              <span className="text-sm sm:text-base">
-                {current === questions.length - 1 ? 'Submit' : 'Next'}
-              </span>
-              {current === questions.length - 1 ? (
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              )}
-            </div>
-          </div>
         </div>
       )}
 

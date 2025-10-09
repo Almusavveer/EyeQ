@@ -1,21 +1,16 @@
 import { useNavigate } from "react-router";
 import { motion } from "framer-motion";
 import { useEffect } from "react";
-import { useAuth } from "../Context/AuthContext";
 
 const HomePage = () => {
    const navigate = useNavigate();
-   const { user, loading } = useAuth();
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      // If user is already logged in, go to home, otherwise go to login
-      if (!loading) {
-        navigate(user ? "/home" : "/login");
-      }
+      navigate("/role");
     }, 3000);
     return () => clearTimeout(timer);
-  }, [navigate, user, loading]);
+  }, [navigate]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-white px-4">
@@ -53,12 +48,11 @@ const HomePage = () => {
         className="text-sm sm:text-md lg:text-lg text-center font-bold text-blue-500 mt-2"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1, delay: 0.6 }}
+        transition={{ duration: 1, delay: 0.3 }}
       >
         Hear, respond, and succeed with confidence
       </motion.p>
     </div>
   );
 };
-
 export default HomePage;

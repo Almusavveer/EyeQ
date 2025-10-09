@@ -1,7 +1,7 @@
 # Configuration settings for the Flask application
 import os
-from pathlib import Path
 
+<<<<<<< HEAD
 # Load environment variables from .env file if it exists
 env_file = Path(__file__).parent / '.env'
 if env_file.exists():
@@ -31,22 +31,18 @@ else:
         "http://localhost:5175",
         "http://127.0.0.1:5175"
     ]
+=======
+# CORS settings - Production domain only
+CORS_ORIGINS = [
+    "https://eye-q-app.vercel.app"
+]
+>>>>>>> parent of 94c2007 ( Production ready: Clean logs, fix student verification, add security)
 
 # File upload settings
-MAX_FILE_SIZE_MB = int(os.getenv('MAX_FILE_SIZE_MB', '10'))
+MAX_FILE_SIZE_MB = 10
 ALLOWED_EXTENSIONS = ['.pdf']
 
 # Server settings
-HOST = os.getenv('HOST', '0.0.0.0' if ENVIRONMENT == 'production' else '127.0.0.1')
-PORT = int(os.getenv('PORT', '5000'))
-
-# Security settings
-SECRET_KEY = os.getenv('SECRET_KEY', 'dev-key-change-in-production')
-
-# Rate limiting settings
-RATE_LIMIT_PER_MINUTE = int(os.getenv('RATE_LIMIT_PER_MINUTE', '60'))
-
-# Firebase settings
-FIREBASE_CREDENTIALS_PATH = os.getenv('FIREBASE_CREDENTIALS_PATH', 'firebase-credentials.json')
+DEBUG = os.getenv('FLASK_ENV') != 'production'
 HOST = '0.0.0.0'
 PORT = int(os.getenv('PORT', 5000))

@@ -78,6 +78,7 @@ const ConfirmAnswer = ({ answer, onConfirm, onReject }) => {
       }
       
       const heard = e.results[0][0].transcript.toLowerCase();
+      console.log("Confirmation heard:", heard);
       
       if (heard.includes("yes")) {
         setSpeechFeedback("Confirmed! Processing your answer...");

@@ -31,9 +31,11 @@ const ExamBuilderForm = ({ onNext }) => {
   const handleQuestionsExtracted = (extractedQuestions, fileName) => {
     setQuestions(extractedQuestions);
     setUploadedFileName(fileName);
+    console.log('✅ Questions received in form:', extractedQuestions.length);
   };
 
   const handleUploadStart = (file) => {
+    console.log('� Upload started:', file.name);
     // Reset previous questions when starting new upload
     setQuestions([]);
     setUploadedFileName("");
@@ -81,6 +83,7 @@ const ExamBuilderForm = ({ onNext }) => {
         uploadedFileName: uploadedFileName
       };
 
+      console.log("Moving to review step with exam data:", examData);
       
       // Move to next step instead of navigating to review page
       onNext(examData);

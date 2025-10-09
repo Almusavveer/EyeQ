@@ -203,30 +203,6 @@ export const preprocessTextForSpeech = (text, options = {}) => {
   return processedText;
 };
 
-// Global variable to store the selected voice for consistency
-let selectedVoice = null;
-
-/**
- * Gets and caches the preferred voice for consistent speech
- * @returns {SpeechSynthesisVoice|null} - The selected voice
- */
-const getConsistentVoice = () => {
-  if (selectedVoice) {
-    return selectedVoice;
-  }
-  
-  const voices = speechSynthesis.getVoices();
-  
-  // Prefer female voices as they're often clearer for technical content
-  selectedVoice = voices.find(v => 
-    v.lang.startsWith('en') && 
-    (v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Hazel'))
-  ) || voices.find(v => v.lang.startsWith('en')) || voices[0];
-  
-  console.log('Selected consistent voice:', selectedVoice?.name);
-  return selectedVoice;
-};
-
 /**
  * Creates a speech synthesis utterance with optimal settings
  * @param {string} text - Text to speak
@@ -251,11 +227,20 @@ export const createSpeechUtterance = (text, options = {}) => {
   utterance.volume = volume;
   utterance.lang = lang;
   
-  // Use consistent voice selection
+  // Try to select the best available voice
   if (voice) {
     utterance.voice = voice;
   } else {
-    utterance.voice = getConsistentVoice();
+    const voices = speechSynthesis.getVoices();
+    // Prefer female voices as they're often clearer for technical content
+    const preferredVoice = voices.find(v => 
+      v.lang.startsWith('en') && 
+      (v.name.includes('Female') || v.name.includes('Zira') || v.name.includes('Hazel'))
+    ) || voices.find(v => v.lang.startsWith('en'));
+    
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
   }
   
   return utterance;
@@ -323,10 +308,6 @@ let voicesInitialized = false;
 const initializeVoices = () => {
   if (!voicesInitialized && speechSynthesis.getVoices().length > 0) {
     voicesInitialized = true;
-    
-    // Initialize the consistent voice selection early
-    getConsistentVoice();
-    
     // Only log in development
     if (process.env.NODE_ENV === 'development') {
       console.log('Available voices:', getAvailableVoices().map(v => v.name));
