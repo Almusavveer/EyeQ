@@ -24,27 +24,62 @@ class FirebaseService:
         try:
             # Check if Firebase is already initialized
             if not firebase_admin._apps:
-                # Try to get credentials from environment variable (JSON string)
-                firebase_creds = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY')
+                # Try to get credentials from individual environment variables first
+                firebase_type = os.getenv('FIREBASE_TYPE')
+                firebase_project_id = os.getenv('FIREBASE_PROJECT_ID')
+                firebase_private_key_id = os.getenv('FIREBASE_PRIVATE_KEY_ID')
+                firebase_private_key = os.getenv('FIREBASE_PRIVATE_KEY')
+                firebase_client_email = os.getenv('FIREBASE_CLIENT_EMAIL')
+                firebase_client_id = os.getenv('FIREBASE_CLIENT_ID')
+                firebase_auth_uri = os.getenv('FIREBASE_AUTH_URI')
+                firebase_token_uri = os.getenv('FIREBASE_TOKEN_URI')
+                firebase_auth_provider_cert_url = os.getenv('FIREBASE_AUTH_PROVIDER_X509_CERT_URL')
+                firebase_client_cert_url = os.getenv('FIREBASE_CLIENT_X509_CERT_URL')
                 
-                if firebase_creds:
-                    # Parse JSON credentials from environment variable
-                    cred_dict = json.loads(firebase_creds)
+                if all([firebase_type, firebase_project_id, firebase_private_key, firebase_client_email]):
+                    # Build credentials dictionary from environment variables
+                    cred_dict = {
+                        "type": firebase_type,
+                        "project_id": firebase_project_id,
+                        "private_key_id": firebase_private_key_id,
+                        "private_key": firebase_private_key.replace('\\n', '\n'),  # Fix newlines
+                        "client_email": firebase_client_email,
+                        "client_id": firebase_client_id,
+                        "auth_uri": firebase_auth_uri,
+                        "token_uri": firebase_token_uri,
+                        "auth_provider_x509_cert_url": firebase_auth_provider_cert_url,
+                        "client_x509_cert_url": firebase_client_cert_url
+                    }
                     cred = credentials.Certificate(cred_dict)
                     firebase_admin.initialize_app(cred)
+                    print("✅ Firebase initialized with environment variables")
                 else:
-                    # Fallback: try to find service account file
-                    service_account_path = os.path.join(os.path.dirname(__file__), '../firebase-service-account.json')
-                    if os.path.exists(service_account_path):
-                        cred = credentials.Certificate(service_account_path)
+                    # Try to get credentials from environment variable (JSON string)
+                    firebase_creds = os.getenv('FIREBASE_SERVICE_ACCOUNT_KEY')
+                    
+                    if firebase_creds:
+                        # Parse JSON credentials from environment variable
+                        cred_dict = json.loads(firebase_creds)
+                        cred = credentials.Certificate(cred_dict)
                         firebase_admin.initialize_app(cred)
+                        print("✅ Firebase initialized with JSON string")
                     else:
-                        return
+                        # Fallback: try to find service account file
+                        service_account_path = os.getenv('FIREBASE_SERVICE_ACCOUNT_PATH', './firebase-service-account.json')
+                        if os.path.exists(service_account_path):
+                            cred = credentials.Certificate(service_account_path)
+                            firebase_admin.initialize_app(cred)
+                            print("✅ Firebase initialized with service account file")
+                        else:
+                            print("❌ No Firebase credentials found, using mock storage")
+                            return
             
             self.db = firestore.client()
+            print("✅ Firestore client connected successfully")
             
         except Exception as e:
             # Firebase initialization failed, will use mock storage
+            print(f"❌ Firebase initialization failed: {str(e)}")
             self.db = None
     
     def submit_exam_result(self, result_data: Dict) -> bool:
