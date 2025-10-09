@@ -31,7 +31,6 @@ const SpeechButton = ({ onResult }) => {
     setError("");
 
     recognition.onstart = () => {
-      console.log("Speech recognition started");
     };
 
     recognition.onresult = (event) => {
@@ -39,7 +38,6 @@ const SpeechButton = ({ onResult }) => {
       const transcript = results[0].transcript;
       const confidence = results[0].confidence;
       
-      console.log("Speech result:", transcript, "Confidence:", confidence);
       
       // Call the callback with the result
       if (onResult) {
@@ -78,7 +76,6 @@ const SpeechButton = ({ onResult }) => {
     };
 
     recognition.onend = () => {
-      console.log("Speech recognition ended");
       setIsListening(false);
     };
 

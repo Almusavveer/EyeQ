@@ -51,23 +51,19 @@ def extract_text_from_pdf(pdf_file_stream):
                         
                         # Log if significant changes were made
                         if original_preview != cleaned_text[:200]:
-                            print(f"Page {page_num}: Cleaned text encoding issues")
                             # Log specific issues found (for debugging)
                             if 'Ɵ' in original_preview or '(cid:' in original_preview:
-                                print(f"  Found encoding issues: {original_preview[:100]}...")
+                                pass  # Previously logged encoding issues here
                         
                         all_text += cleaned_text + "\n"
                 except Exception as page_error:
-                    print(f"Error processing page {page_num}: {page_error}")
                     continue
                     
     except Exception as e:
-        print(f"Error processing PDF: {e}")
         traceback.print_exc()
         return ""
 
     final_text = all_text.strip()
-    print(f"PDF extraction complete: {len(final_text)} characters extracted")
     return final_text
 
 def clean_pdf_text(text):
@@ -280,14 +276,11 @@ def extract_tables_from_pdf(pdf_file_stream):
                 try:
                     tables = page.extract_tables()
                     if tables:
-                        print(f"Found {len(tables)} tables on page {page_num + 1}")
                         all_tables.extend(tables)
                 except Exception as page_error:
-                    print(f"Error processing page {page_num + 1}: {page_error}")
                     continue
                     
     except Exception as e:
-        print(f"Error extracting tables from PDF: {e}")
         traceback.print_exc()
         return []
 

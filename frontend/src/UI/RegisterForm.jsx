@@ -1,9 +1,9 @@
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { auth, db } from "../firebase";
-import { doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { auth } from "../firebase";
 import { useNavigate } from "react-router";
+import { userAPI } from "../utils/api";
 
 const RegisterFom = ({error, setError}) => {
   const [show, setShow] = useState(false);
@@ -23,14 +23,15 @@ const RegisterFom = ({error, setError}) => {
       );
       const user = userCredential.user;
       
-      // Create user document with proper fields
-      await setDoc(doc(db, "users", user.uid), {
+      // Create user document in backend using API
+      const userData = {
         uid: user.uid,
         email: email,
         name: name,
-        role: 'teacher',
-        createdAt: serverTimestamp(),
-      });
+        role: 'teacher'
+      };
+      
+      await userAPI.createUser(userData);
 
       navigate("/home", {replace: true}); 
       

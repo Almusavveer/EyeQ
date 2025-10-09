@@ -48,7 +48,6 @@ const PublishStep = ({ examData, onPrev }) => {
       setExamLink(shareableLink);
       setPublished(true);
       
-      console.log("✅ Exam published successfully with ID:", docRef.id);
       
     } catch (error) {
       console.error("❌ Error publishing exam:", error);

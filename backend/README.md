@@ -1,6 +1,61 @@
-# EyeQ Backend - Render Deployment
+# EyeQ Backend - Flask API Documentation
 
 This is the Flask backend API for EyeQ, configured for deployment on Render.
+
+## 🚀 Production Deployment (Render)
+
+### Environment Variables Required:
+
+**Production (Render):**
+```bash
+FLASK_ENV=production
+PORT=10000  # Auto-set by Render
+PYTHON_VERSION=3.11.0
+```
+
+**Development (Local):**
+```bash
+FLASK_ENV=development
+PORT=5000
+```
+
+### Server Configuration:
+
+- **Development**: Uses Flask's built-in server with debug mode enabled
+- **Production**: Uses Gunicorn WSGI server (configured in Procfile)
+- **CORS**: Configured for both production and development environments
+- **File Uploads**: Limited to 10MB PDF files
+
+### Running the Server:
+
+**Development:**
+```bash
+cd backend
+python app.py
+```
+
+**Production (via Gunicorn):**
+```bash
+cd backend
+gunicorn app:app
+```
+
+### Health Check:
+- **Endpoint**: `GET /health`
+- **Returns**: `{"status": "healthy", "message": "PDF processing service is running"}`
+
+## 📁 Key Configuration Files:
+
+1. **app.py** - Main Flask application with startup logging
+2. **config.py** - CORS and debug configuration settings
+3. **Procfile** - Render deployment configuration (`web: gunicorn app:app`)
+4. **requirements.txt** - Python dependencies
+
+## 🌐 CORS Configuration:
+
+CORS is configured to allow requests from:
+- **Production**: `https://eye-q-app.vercel.app`
+- **Development**: `http://localhost:5173`, `http://localhost:5174`, `http://localhost:5175`
 
 ## 🚀 Deployment Steps
 
