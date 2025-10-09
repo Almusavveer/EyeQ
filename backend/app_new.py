@@ -55,8 +55,6 @@ def extract_students():
         }), 200
         
     except Exception as e:
-        print(f"Unexpected error in extract_students: {e}")
-        print(f"Error type: {type(e)}")
         traceback.print_exc()
         return jsonify({"error": "Internal server error occurred while processing the file"}), 500
 
@@ -96,8 +94,6 @@ def upload_file():
         }), 200
         
     except Exception as e:
-        print(f"Unexpected error in upload_file: {e}")
-        print(f"Error type: {type(e)}")
         traceback.print_exc()
         return jsonify({"error": "Internal server error occurred while processing the file"}), 500
 

@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { useState, useEffect, useRef } from "react";
 import { useAuthState } from "react-firebase-hooks/auth";
 import { useNavigate } from "react-router";
-import { auth, db } from "../firebase";
+import { auth } from "../firebase";
 import { FiUsers, FiUpload, FiCheck, FiAlertCircle, FiDownload, FiTrash2, FiUserCheck, FiArrowLeft } from "react-icons/fi";
+import { studentAPI, pdfAPI } from "../utils/api";
 
 const StudentManager = () => {
   const [user] = useAuthState(auth);
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [students, setStudents] = useState([]);
   const [existingStudents, setExistingStudents] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -22,14 +23,8 @@ const StudentManager = () => {
     
     setLoading(true);
     try {
-      const studentsRef = collection(db, "users", user.uid, "students");
-      const snapshot = await getDocs(studentsRef);
-      const studentsList = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      const studentsList = await studentAPI.getStudents(user.uid);
       setExistingStudents(studentsList);
-      console.log(`✅ Loaded ${studentsList.length} existing students`);
     } catch (error) {
       console.error("❌ Error loading students:", error);
       setError("Failed to load existing students");
@@ -43,9 +38,8 @@ const StudentManager = () => {
     if (!user) return;
     
     try {
-      await deleteDoc(doc(db, "users", user.uid, "students", studentId));
+      await studentAPI.deleteStudent(user.uid, studentId);
       setExistingStudents(prev => prev.filter(s => s.id !== studentId));
-      console.log("✅ Student deleted successfully");
     } catch (error) {
       console.error("❌ Error deleting student:", error);
       setError("Failed to delete student");
@@ -61,46 +55,25 @@ const StudentManager = () => {
 
   // Extract students from PDF using backend API
   const uploadPdfToBackend = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    // Use the student extraction API endpoint
-    const apiUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://eyeq-backend-0wa9.onrender.com/api/extract-students' 
-      : 'http://127.0.0.1:5000/api/extract-students';
-
     try {
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `Server error: ${response.status}`);
-      }
-
-      const result = await response.json();
-      
-      // Handle different response formats
-      if (result.students) {
-        return result.students;
-      } else if (Array.isArray(result)) {
-        return result;
-      } else if (result.data && Array.isArray(result.data)) {
-        return result.data;
-      } else {
-        throw new Error('Invalid response format from server');
-      }
+      const result = await pdfAPI.extractStudents(file);
+      return result.students || [];
     } catch (error) {
-      console.error('Backend API error:', error);
-      
-      // If it's a network error and we're in development, provide helpful message
-      if (error.message.includes('fetch') && process.env.NODE_ENV !== 'production') {
-        throw new Error('Unable to connect to backend server. Please ensure the Flask backend is running on http://127.0.0.1:5000 or check https://eyeq-backend-0wa9.onrender.com');
-      }
-      
+      console.error('❌ PDF extraction failed:', error);
       throw error;
+    }
+  };
+
+  // Reset the form to clean state
+  const resetUploadForm = () => {
+    setStudents([]);
+    setUploadedFileName("");
+    setError("");
+    setSuccess("");
+    
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -109,15 +82,27 @@ const StudentManager = () => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Clear any previous state
+    setError("");
+    setSuccess("");
+
     // Validate file type
     if (file.type !== 'application/pdf') {
       setError('Please select a PDF file.');
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
     // Validate file size (max 10MB)
     if (file.size > 10 * 1024 * 1024) {
       setError('File size must be less than 10MB.');
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
       return;
     }
 
@@ -127,8 +112,6 @@ const StudentManager = () => {
     setUploadedFileName(file.name);
 
     try {
-      console.log('📄 Uploading student PDF:', file.name);
-      
       // Use the real PDF extraction API
       const extractedStudents = await uploadPdfToBackend(file);
       
@@ -168,13 +151,16 @@ const StudentManager = () => {
       });
 
       setStudents(validStudents);
-      console.log('✅ Successfully extracted students:', validStudents.length);
 
     } catch (error) {
       console.error('❌ Student extraction error:', error);
       setError(error.message || 'Failed to extract student data. Please try again.');
     } finally {
       setUploading(false);
+      // Reset file input to allow re-uploading the same file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -189,13 +175,11 @@ const StudentManager = () => {
     setError("");
 
     try {
-      // Save each student to user-specific subcollection: users/{userId}/students
+      // Save each student to backend via API
       const savePromises = students.map(student => 
-        addDoc(collection(db, "users", user.uid, "students"), {
+        studentAPI.addStudent(user.uid, {
           ...student,
-          createdAt: new Date(),
           active: true,
-          uploadedAt: new Date(),
           uploadedFileName: uploadedFileName
         })
       );
@@ -203,15 +187,16 @@ const StudentManager = () => {
       await Promise.all(savePromises);
       
       setSuccess(`✅ Successfully saved ${students.length} students to your database!`);
-      console.log('✅ Students saved to user database');
       
-      // Reload the existing students list
-      await loadExistingStudents();
+      // Clear the form immediately for a clean UI
+      resetUploadForm();
       
-      // Clear the form
+      // Also clear existing students to hide the database table
+      setExistingStudents([]);
+      
+      // Show success message temporarily
+      setSuccess(`✅ Successfully saved ${students.length} students to your database!`);
       setTimeout(() => {
-        setStudents([]);
-        setUploadedFileName("");
         setSuccess("");
       }, 3000);
 
@@ -390,6 +375,7 @@ const StudentManager = () => {
                 disabled={uploading}
                 className="hidden"
                 id="student-pdf-upload"
+                ref={fileInputRef}
               />
               
               <label
@@ -468,11 +454,11 @@ const StudentManager = () => {
               
               <div className="flex gap-3">
                 <button
-                  onClick={() => setStudents([])}
+                  onClick={resetUploadForm}
                   className="inline-flex items-center gap-2 px-4 py-2 text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-lg transition-colors duration-200"
                 >
                   <FiTrash2 className="h-4 w-4" />
-                  Clear
+                  Clear All
                 </button>
                 
                 <button
@@ -641,18 +627,18 @@ const StudentManager = () => {
                       <tr key={student.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                            {student.rollNo}
+                            {student.rollNumber || student.rollNo || 'N/A'}
                           </span>
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{student.name}</div>
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{student.academicYear || 'N/A'}</div>
+                          <div className="text-sm text-gray-900">{student.year || student.academicYear || 'N/A'}</div>
                         </td>
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                           <span className="inline-flex px-3 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                            {student.class}
+                            {student.class || 'N/A'}
                           </span>
                         </td>
                         {existingStudents.some(s => s.division) && (

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import PasswordReset from "../Components/PasswordReset";
 
 const LoginFom = () => {
@@ -12,12 +12,16 @@ const LoginFom = () => {
   const [error, setError] = useState("");
   const [showPasswordReset, setShowPasswordReset] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/home", { replace: true });
+      
+      // Redirect to the page they were trying to access, or default to home
+      const redirectTo = location.state?.from?.pathname || "/home";
+      navigate(redirectTo, { replace: true });
     } catch (error) {
       setError(
         "We couldn’t find an account with that email. Want to sign up instead?",
