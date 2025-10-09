@@ -18,12 +18,12 @@ DEBUG = ENVIRONMENT != 'production'
 # CORS settings - Production and development
 if ENVIRONMENT == 'production':
     CORS_ORIGINS = [
-        "https://eye-q-app.vercel.app",
+        "https://eyeqapp.vercel.app",
         # Add any other production domains here
     ]
 else:
     CORS_ORIGINS = [
-        "https://eye-q-app.vercel.app",
+        "https://eyeqapp.vercel.app",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:5174", 
