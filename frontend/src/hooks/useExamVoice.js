@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { normalizeSpeechInput } from '../utils/speechUtils';
 
 /**
  * Custom hook for managing voice functionality in the exam
@@ -15,6 +14,7 @@ import { normalizeSpeechInput } from '../utils/speechUtils';
  * @param {boolean} params.timerStarted - Whether timer has started
  * @param {boolean} params.isVerified - Whether student is verified
  * @param {string} params.examId - Exam ID
+ * @param {Function} params.speakText - Function to speak text to the user
  * @returns {Object} Voice-related state and functions
  */
 export const useExamVoice = ({
@@ -30,7 +30,8 @@ export const useExamVoice = ({
     isVerified,
     examId,
     setTimerStarted,
-    isLoaded
+    isLoaded,
+    speakText
 }) => {
     // Refs to hold the latest state and props to avoid stale closures
     const questionsRef = useRef(questions);
@@ -41,11 +42,14 @@ export const useExamVoice = ({
     const handleAnswerRef = useRef(handleAnswer);
     const handleNextRef = useRef(handleNext);
     const handlePrevRef = useRef(handlePrev);
+    const speakTextRef = useRef(speakText);
 
     // Voice-related states
     const [speechSupported, setSpeechSupported] = useState(false);
     const [isListening, setIsListening] = useState(false);
-    const [voiceStep, setVoiceStepState] = useState('question'); // 'question' or 'listening'
+    const [voiceStep, setVoiceStepState] = useState('question'); // 'question', 'listening', or 'confirming'
+    const [pendingOptionId, setPendingOptionId] = useState(null);
+    const [isConfirming, setIsConfirming] = useState(false);
     
     const recognitionRef = useRef(null);
     const currentVoiceStepRef = useRef('question');
@@ -60,7 +64,8 @@ export const useExamVoice = ({
         handleAnswerRef.current = handleAnswer;
         handleNextRef.current = handleNext;
         handlePrevRef.current = handlePrev;
-    }, [questions, currentQuestion, isLoaded, handleAnswer, handleNext, handlePrev]);
+        speakTextRef.current = speakText;
+    }, [questions, currentQuestion, isLoaded, handleAnswer, handleNext, handlePrev, speakText]);
 
     // Function to safely set the voice step state and ref
     const setVoiceStep = (step) => {
@@ -83,22 +88,20 @@ export const useExamVoice = ({
 
         recognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript.toLowerCase().trim();
-            const normalizedTranscript = normalizeSpeechInput(transcript);
-            handleVoiceResult(normalizedTranscript);
+            handleVoiceResult(transcript);
         };
 
         recognition.onerror = (event) => {
             console.error('Speech recognition error:', event.error);
-            // The 'onend' event will be fired automatically after an error,
-            // so we can centralize our state reset logic there.
         };
 
         recognition.onend = () => {
-            // This event fires whenever recognition stops for any reason (result, no-speech, error).
-            // This is the single, reliable place to reset our state for the next listening session.
             setIsListening(false);
-            setVoiceStep('question');
             isProcessingVoiceRef.current = false;
+            // Only reset the voice step to 'question' if we are not in the middle of a confirmation flow.
+            if (currentVoiceStepRef.current !== 'confirming') {
+                setVoiceStep('question');
+            }
         };
         
         recognitionRef.current = recognition;
@@ -124,16 +127,17 @@ export const useExamVoice = ({
         console.log('Handling voice result, transcript:', transcript);
         
         const stopRecognition = () => {
-            // We don't need to manually set state here. The 'onend' handler will take care of it.
             if (recognitionRef.current) {
-                // This will trigger the 'onend' event handler where state is reset.
                 recognitionRef.current.stop();
             }
         };
 
-        // Handle navigation commands
+        // Handle navigation commands (allowed in both modes)
         if (transcript.includes('next') || transcript.includes('go next') || transcript.includes('next question')) {
             console.log('Calling handleNext via ref');
+            setPendingOptionId(null);
+            setIsConfirming(false);
+            setVoiceStep('question');
             handleNextRef.current();
             stopRecognition();
             return;
@@ -141,28 +145,86 @@ export const useExamVoice = ({
         
         if (transcript.includes('previous') || transcript.includes('prev') || transcript.includes('back') || transcript.includes('go back') || transcript.includes('previous question')) {
             console.log('Calling handlePrev via ref');
+            setPendingOptionId(null);
+            setIsConfirming(false);
+            setVoiceStep('question');
             handlePrevRef.current();
             stopRecognition();
             return;
         }
 
-        // Handle option selection
-        let optionIndex = -1;
-        if (transcript.includes('option a') || transcript.includes('option 1') || transcript === 'a' || transcript === '1') optionIndex = 0;
-        else if (transcript.includes('option b') || transcript.includes('option 2') || transcript === 'b' || transcript === '2') optionIndex = 1;
-        else if (transcript.includes('option c') || transcript.includes('option 3') || transcript === 'c' || transcript === '3') optionIndex = 2;
-        else if (transcript.includes('option d') || transcript.includes('option 4') || transcript === 'd' || transcript === '4') optionIndex = 3;
+        if (isConfirming) {
+            // In confirmation mode
+            if (transcript.includes('confirm') || transcript.includes('yes') || transcript.includes('ok') || transcript.includes('okay') || transcript.includes('proceed')) {
+                // Confirm the selection and go to next
+                console.log('Confirming selection and going to next question');
+                setPendingOptionId(null);
+                setIsConfirming(false);
+                setVoiceStep('question'); // FIX: Reset the voice step to allow the next command cycle
+                handleNextRef.current();
+                stopRecognition();
+                return;
+            } else {
+                // Check if user said a different option
+                let newOptionIndex = -1;
+                if (transcript.includes('option a') || transcript.includes('option 1') || transcript === 'a' || transcript === '1') newOptionIndex = 0;
+                else if (transcript.includes('option b') || transcript.includes('option 2') || transcript === 'b' || transcript === '2') newOptionIndex = 1;
+                else if (transcript.includes('option c') || transcript.includes('option 3') || transcript === 'c' || transcript === '3') newOptionIndex = 2;
+                else if (transcript.includes('option d') || transcript.includes('option 4') || transcript === 'd' || transcript === '4') newOptionIndex = 3;
 
-        if (optionIndex !== -1 && currentQuestionRef.current && currentQuestionRef.current.options[optionIndex]) {
-            handleAnswerRef.current(currentQuestionRef.current.id, currentQuestionRef.current.options[optionIndex].id);
+                if (newOptionIndex !== -1 && currentQuestionRef.current && currentQuestionRef.current.options[newOptionIndex]) {
+                    const newOptionId = currentQuestionRef.current.options[newOptionIndex].id;
+                    const newOptionText = currentQuestionRef.current.options[newOptionIndex].text;
+                    handleAnswerRef.current(currentQuestionRef.current.id, newOptionId);
+                    setPendingOptionId(newOptionId);
+                    // FIX: After changing the option, speak and then re-start listening for the new confirmation.
+                    speakTextRef.current(`You selected ${newOptionText}. Confirm or speak a different option.`).then(() => {
+                        if (recognitionRef.current) {
+                            setIsListening(true);
+                            recognitionRef.current.start();
+                        }
+                    }).catch((error) => {
+                        console.error('Error speaking confirmation:', error);
+                    });
+                    isProcessingVoiceRef.current = false;
+                    return;
+                }
+                stopRecognition();
+            }
+        } else {
+            // Normal mode: Handle option selection
+            let optionIndex = -1;
+            if (transcript.includes('option a') || transcript.includes('option 1') || transcript === 'a' || transcript === '1') optionIndex = 0;
+            else if (transcript.includes('option b') || transcript.includes('option 2') || transcript === 'b' || transcript === '2') optionIndex = 1;
+            else if (transcript.includes('option c') || transcript.includes('option 3') || transcript === 'c' || transcript === '3') optionIndex = 2;
+            else if (transcript.includes('option d') || transcript.includes('option 4') || transcript === 'd' || transcript === '4') optionIndex = 3;
+
+            if (optionIndex !== -1 && currentQuestionRef.current && currentQuestionRef.current.options[optionIndex]) {
+                const optionId = currentQuestionRef.current.options[optionIndex].id;
+                const optionText = currentQuestionRef.current.options[optionIndex].text;
+                handleAnswerRef.current(currentQuestionRef.current.id, optionId);
+                setPendingOptionId(optionId);
+                setIsConfirming(true);
+                setVoiceStep('confirming');
+                speakTextRef.current(`You selected ${optionText}. Confirm or speak a different option.`).then(() => {
+                    // After speaking, start listening again for confirmation
+                    if (recognitionRef.current) {
+                        setIsListening(true);
+                        recognitionRef.current.start();
+                    }
+                }).catch((error) => {
+                    console.error('Error speaking confirmation:', error);
+                });
+                isProcessingVoiceRef.current = false;
+                return;
+            }
+            stopRecognition();
         }
-
-        stopRecognition();
     };
 
     // Start voice input
     const startVoiceInput = () => {
-        if (recognitionRef.current && !isListening && currentVoiceStepRef.current === 'question' && timerStarted && currentQuestionRef.current && questionsRef.current.length > 0) {
+        if (recognitionRef.current && !isListening && (currentVoiceStepRef.current === 'question' || currentVoiceStepRef.current === 'confirming') && timerStarted && currentQuestionRef.current && questionsRef.current.length > 0) {
             console.log('Starting voice input');
             setIsListening(true);
             setVoiceStep('listening');

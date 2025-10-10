@@ -78,7 +78,8 @@ const ExamPage = () => {
         isVerified,
         examId,
         setTimerStarted,
-        isLoaded
+        isLoaded,
+        speakText
     });
 
     // Speak welcome message when exam is loaded
