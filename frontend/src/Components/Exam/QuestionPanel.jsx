@@ -21,29 +21,22 @@ const QuestionPanel = ({ question, onAnswer }) => {
         {question.options.map((option, index) => {
           const optionLetter = String.fromCharCode(65 + index); // A, B, C, D
           return (
-            <label
+            <div
               key={option.id}
-              className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+              onClick={() => onAnswer(question.id, option.id)}
+              className={`flex items-center p-4 border-2 rounded-lg transition-all duration-200 cursor-pointer ${
                 question.answer === option.id
                   ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-200'
-                  : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
+                  : 'border-gray-300 hover:border-gray-400'
               }`}
             >
-              <input
-                type="radio"
-                name={`question-${question.id}`}
-                value={option.id}
-                checked={question.answer === option.id}
-                onChange={() => onAnswer(question.id, option.id)}
-                className="hidden" // Hide the default radio button
-              />
               <span className={`w-8 h-8 rounded-full border-2 flex-shrink-0 mr-4 flex items-center justify-center font-bold text-sm ${
                 question.answer === option.id ? 'border-blue-600 bg-blue-500 text-white' : 'border-gray-400 text-gray-600'
               }`}>
                 {optionLetter}
               </span>
               <span className="font-medium text-gray-700">{option.text}</span>
-            </label>
+            </div>
           );
         })}
       </div>

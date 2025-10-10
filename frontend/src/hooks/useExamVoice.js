@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { speakText } from '../utils/speechUtils';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { normalizeSpeechInput } from '../utils/speechUtils';
 
 /**
  * Custom hook for managing voice functionality in the exam
@@ -28,268 +28,160 @@ export const useExamVoice = ({
     examTitle,
     timerStarted,
     isVerified,
-    examId
+    examId,
+    setTimerStarted,
+    isLoaded
 }) => {
+    // Refs to hold the latest state and props to avoid stale closures
+    const questionsRef = useRef(questions);
+    const currentQuestionRef = useRef(currentQuestion);
+    const isLoadedRef = useRef(isLoaded);
+
+    // Refs to hold the latest versions of the handler functions
+    const handleAnswerRef = useRef(handleAnswer);
+    const handleNextRef = useRef(handleNext);
+    const handlePrevRef = useRef(handlePrev);
+
     // Voice-related states
     const [speechSupported, setSpeechSupported] = useState(false);
     const [isListening, setIsListening] = useState(false);
-    const [voiceStep, setVoiceStep] = useState('welcome'); // welcome, instructions, question, confirm, review_answer, listening
-    const [pendingAnswer, setPendingAnswer] = useState(null);
-    const [navigationDirection, setNavigationDirection] = useState(null); // 'next', 'prev', or null
+    const [voiceStep, setVoiceStepState] = useState('question'); // 'question' or 'listening'
+    
     const recognitionRef = useRef(null);
+    const currentVoiceStepRef = useRef('question');
+    const isProcessingVoiceRef = useRef(false);
 
-    // Initialize speech recognition
+    // Update refs with useLayoutEffect for synchronous update after render
+    useLayoutEffect(() => {
+        questionsRef.current = questions;
+        currentQuestionRef.current = currentQuestion;
+        isLoadedRef.current = isLoaded;
+        // Keep the handler refs updated with the latest functions from props
+        handleAnswerRef.current = handleAnswer;
+        handleNextRef.current = handleNext;
+        handlePrevRef.current = handlePrev;
+    }, [questions, currentQuestion, isLoaded, handleAnswer, handleNext, handlePrev]);
+
+    // Function to safely set the voice step state and ref
+    const setVoiceStep = (step) => {
+        setVoiceStepState(step);
+        currentVoiceStepRef.current = step;
+    };
+
+    // Initialize speech recognition on component mount
     useEffect(() => {
-        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-            setSpeechSupported(true);
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            recognitionRef.current = new SpeechRecognition();
-            recognitionRef.current.continuous = false;
-            recognitionRef.current.interimResults = false;
-            recognitionRef.current.lang = 'en-US';
-
-            recognitionRef.current.onresult = (event) => {
-                const transcript = event.results[0][0].transcript.toLowerCase().trim();
-                handleVoiceResult(transcript);
-            };
-
-            recognitionRef.current.onerror = (event) => {
-                console.error('Speech recognition error:', event.error);
-                setIsListening(false);
-                setVoiceStep('question');
-                speakText("Voice recognition failed. Please try again by clicking the screen.");
-            };
-
-            recognitionRef.current.onend = () => {
-                setIsListening(false);
-            };
+        if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+            return;
         }
-    }, []);
+
+        setSpeechSupported(true);
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = false;
+        recognition.lang = 'en-US';
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript.toLowerCase().trim();
+            const normalizedTranscript = normalizeSpeechInput(transcript);
+            handleVoiceResult(normalizedTranscript);
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            // The 'onend' event will be fired automatically after an error,
+            // so we can centralize our state reset logic there.
+        };
+
+        recognition.onend = () => {
+            // This event fires whenever recognition stops for any reason (result, no-speech, error).
+            // This is the single, reliable place to reset our state for the next listening session.
+            setIsListening(false);
+            setVoiceStep('question');
+            isProcessingVoiceRef.current = false;
+        };
+        
+        recognitionRef.current = recognition;
+
+        // Cleanup function to stop recognition if the component unmounts
+        return () => {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+        };
+    }, []); // Empty dependency array ensures this runs only once
 
     // Handle voice recognition results
     const handleVoiceResult = (transcript) => {
-        setIsListening(false);
-
-        if (voiceStep === 'confirm') {
-            if (transcript.includes('confirm') || transcript.includes('yes') || transcript.includes('correct')) {
-                // Confirm the answer
-                handleAnswer(currentQuestion.id, pendingAnswer);
-                setPendingAnswer(null);
-                setVoiceStep('question');
-                speakText("Answer confirmed. Moving to next question.");
-                setTimeout(() => {
-                    handleNext();
-                }, 2000);
-            } else if (transcript.includes('change') || transcript.includes('no') || transcript.includes('wrong')) {
-                // Allow changing answer
-                setPendingAnswer(null);
-                setVoiceStep('question');
-                speakText("Please select your answer again by clicking the screen.");
-            } else {
-                // Didn't understand, ask again
-                speakText("I didn't understand. Please say 'confirm' to accept this answer or 'change' to select a different option.");
-                setTimeout(() => setVoiceStep('confirm'), 1000);
-            }
-        } else if (voiceStep === 'review_answer') {
-            if (transcript.includes('yes') || transcript.includes('change') || transcript.includes('update')) {
-                // User wants to change answer
-                setVoiceStep('question');
-                speakText("Please select your new answer by clicking the screen.");
-            } else if (transcript.includes('no') || transcript.includes('keep') || transcript.includes('same')) {
-                // User wants to keep current answer
-                setVoiceStep('question');
-                if (navigationDirection === 'next') {
-                    speakText("Keeping your current answer. Moving to next question.");
-                    setTimeout(() => handleNext(), 2000);
-                } else if (navigationDirection === 'prev') {
-                    speakText("Keeping your current answer. Moving to previous question.");
-                    setTimeout(() => handlePrev(), 2000);
-                }
-                setNavigationDirection(null);
-            } else {
-                // Didn't understand, ask again
-                const currentAnswer = currentQuestion?.answer;
-                const answerLetter = currentAnswer !== null ? String.fromCharCode(65 + currentAnswer) : 'none';
-                speakText(`You currently have ${answerLetter} selected. Do you want to change your answer? Say yes to change or no to keep it.`);
-                setTimeout(() => setVoiceStep('review_answer'), 1000);
-            }
-        } else if (voiceStep === 'listening') {
-            // Parse answer choice
-            const answerMap = {
-                'a': 0, 'option a': 0, 'first': 0, 'one': 0, 'choice a': 0,
-                'b': 1, 'option b': 1, 'second': 1, 'two': 1, 'choice b': 1,
-                'c': 2, 'option c': 2, 'third': 2, 'three': 2, 'choice c': 2,
-                'd': 3, 'option d': 3, 'fourth': 3, 'four': 3, 'choice d': 3
-            };
-
-            const optionIndex = answerMap[transcript];
-            if (optionIndex !== undefined && currentQuestion && currentQuestion.options[optionIndex]) {
-                const selectedOption = currentQuestion.options[optionIndex].id;
-                setPendingAnswer(selectedOption);
-                setVoiceStep('confirm');
-                speakText(`You selected ${String.fromCharCode(65 + optionIndex)}. Do you want to confirm this option or want to change?`);
-            } else {
-                speakText("I didn't understand your answer. Please say A, B, C, or D, or click again to try voice input.");
-                setVoiceStep('question');
-            }
+        if (isProcessingVoiceRef.current || !isLoadedRef.current || questionsRef.current.length === 0) {
+            console.log('Ignoring voice result due to processing or invalid state.');
+            isProcessingVoiceRef.current = false;
+            if (recognitionRef.current) recognitionRef.current.stop();
+            return;
         }
+        
+        isProcessingVoiceRef.current = true;
+        console.log('Handling voice result, transcript:', transcript);
+        
+        const stopRecognition = () => {
+            // We don't need to manually set state here. The 'onend' handler will take care of it.
+            if (recognitionRef.current) {
+                // This will trigger the 'onend' event handler where state is reset.
+                recognitionRef.current.stop();
+            }
+        };
+
+        // Handle navigation commands
+        if (transcript.includes('next') || transcript.includes('go next') || transcript.includes('next question')) {
+            console.log('Calling handleNext via ref');
+            handleNextRef.current();
+            stopRecognition();
+            return;
+        } 
+        
+        if (transcript.includes('previous') || transcript.includes('prev') || transcript.includes('back') || transcript.includes('go back') || transcript.includes('previous question')) {
+            console.log('Calling handlePrev via ref');
+            handlePrevRef.current();
+            stopRecognition();
+            return;
+        }
+
+        // Handle option selection
+        let optionIndex = -1;
+        if (transcript.includes('option a') || transcript.includes('option 1') || transcript === 'a' || transcript === '1') optionIndex = 0;
+        else if (transcript.includes('option b') || transcript.includes('option 2') || transcript === 'b' || transcript === '2') optionIndex = 1;
+        else if (transcript.includes('option c') || transcript.includes('option 3') || transcript === 'c' || transcript === '3') optionIndex = 2;
+        else if (transcript.includes('option d') || transcript.includes('option 4') || transcript === 'd' || transcript === '4') optionIndex = 3;
+
+        if (optionIndex !== -1 && currentQuestionRef.current && currentQuestionRef.current.options[optionIndex]) {
+            handleAnswerRef.current(currentQuestionRef.current.id, currentQuestionRef.current.options[optionIndex].id);
+        }
+
+        stopRecognition();
     };
 
     // Start voice input
     const startVoiceInput = () => {
-        if (recognitionRef.current && !isListening && voiceStep === 'question') {
+        if (recognitionRef.current && !isListening && currentVoiceStepRef.current === 'question' && timerStarted && currentQuestionRef.current && questionsRef.current.length > 0) {
+            console.log('Starting voice input');
             setIsListening(true);
             setVoiceStep('listening');
-            recognitionRef.current.start();
-        }
-    };
-
-    // Speak current question and options
-    const speakCurrentQuestion = async () => {
-        if (!currentQuestion) return;
-
-        try {
-            await speakText(`Question ${currentQuestion.id}: ${currentQuestion.questionText}`);
-
-            // Wait a bit then speak options
-            setTimeout(async () => {
-                for (let i = 0; i < currentQuestion.options.length; i++) {
-                    const optionLetter = String.fromCharCode(65 + i);
-                    await speakText(`Option ${optionLetter}: ${currentQuestion.options[i].text}`);
-                    // Small pause between options
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
-
-                // After reading all options, prompt for answer
-                setTimeout(() => {
-                    speakText("Please click the screen to speak your answer. Say A, B, C, or D.");
-                    setVoiceStep('question');
-                }, 1000);
-            }, 1500);
-        } catch (error) {
-            console.error('Error speaking question:', error);
-        }
-    };
-
-    // Speak question with current answer for review
-    const speakQuestionWithAnswer = async () => {
-        if (!currentQuestion) return;
-
-        try {
-            await speakText(`Question ${currentQuestion.id}: ${currentQuestion.questionText}`);
-
-            const currentAnswer = currentQuestion.answer;
-            if (currentAnswer !== null) {
-                const answerLetter = String.fromCharCode(65 + currentAnswer);
-                const answerText = currentQuestion.options[currentAnswer]?.text || 'Unknown';
-                await speakText(`Your current answer is ${answerLetter}: ${answerText}`);
-                setTimeout(() => {
-                    speakText("Do you want to change your answer? Say yes to change or no to keep it.");
-                    setVoiceStep('review_answer');
-                }, 1000);
-            } else {
-                // No answer selected, proceed to normal question reading
-                speakCurrentQuestion();
-            }
-        } catch (error) {
-            console.error('Error speaking question with answer:', error);
-        }
-    };
-
-    // Start exam instructions and welcome
-    const startExamInstructions = async () => {
-        if (!speechSupported) return;
-
-        try {
-            // Welcome message
-            await speakText(`Welcome ${studentName} to your exam: ${examTitle}`);
-
-            // Instructions
-            setTimeout(async () => {
-                await speakText("Exam Instructions: This is a voice-enabled exam designed for blind students. I will read each question and all answer options to you. After I finish reading, click anywhere on the screen to activate voice input. Then speak your answer by saying A, B, C, or D. I will confirm your selection and ask if you want to confirm or change your answer. Use arrow keys or say next and previous to navigate between questions. When navigating to a question you've already answered, I'll read your current answer and ask if you want to change it. The exam will automatically start when instructions are complete.");
-
-                // Start timer after instructions
-                setTimeout(() => {
-                    speakText("Instructions complete. Starting your exam now. Here is question 1.");
-                    setVoiceStep('question');
-                    speakCurrentQuestion();
-                }, 3000);
-            }, 2000);
-        } catch (error) {
-            console.error('Error with exam instructions:', error);
-            // Fallback: start exam anyway
-            setVoiceStep('question');
-        }
-    };
-
-    // Enhanced navigation with answer review
-    const handleNavigation = (direction) => {
-        if (direction === 'next' && currentQuestion.id >= questions.length) return;
-        if (direction === 'prev' && currentQuestion.id <= 1) return;
-
-        // Check if current question has an answer
-        if (currentQuestion && currentQuestion.answer !== null) {
-            setNavigationDirection(direction);
-            // Don't navigate yet - let the voice system handle the review
-            return;
-        }
-
-        // No answer, proceed normally
-        if (direction === 'next') {
-            handleNext();
-        } else {
-            handlePrev();
-        }
-    };
-
-    // Handle navigation to specific question number
-    const handleNavigateToQuestion = (questionId) => {
-        const targetQuestion = questions.find(q => q.id === questionId);
-        if (!targetQuestion) return;
-
-        // Check if target question has an answer
-        if (targetQuestion.answer !== null) {
-            // Set navigation direction based on relative position
-            const direction = questionId > currentQuestion.id ? 'next' : 'prev';
-            setNavigationDirection(direction);
-            // Don't navigate yet - let the voice system handle the review
-            return;
-        }
-
-        // No answer, navigate directly
-        setCurrentQuestionId(questionId);
-        setVoiceStep('question');
-    };
-
-    // Start instructions when exam data is loaded and verified
-    useEffect(() => {
-        if (isVerified && examId && questions.length > 0 && !timerStarted && speechSupported) {
-            startExamInstructions();
-        } else if (isVerified && examId && questions.length > 0 && !speechSupported) {
-            // Fallback for non-speech browsers
-            setVoiceStep('question');
-        }
-    }, [isVerified, examId, questions.length, timerStarted, speechSupported]);
-
-    // Speak question when currentQuestion changes
-    useEffect(() => {
-        if (timerStarted && currentQuestion && voiceStep === 'question') {
-            // Check if question has an answer - if so, review it
-            if (currentQuestion.answer !== null) {
-                speakQuestionWithAnswer();
-            } else {
-                speakCurrentQuestion();
+            try {
+                recognitionRef.current.start();
+            } catch (error) {
+                console.error('Error starting recognition:', error);
+                setIsListening(false);
+                setVoiceStep('question');
             }
         }
-    }, [currentQuestion?.id, timerStarted]);
+    };
 
     return {
         speechSupported,
         isListening,
         voiceStep,
         startVoiceInput,
-        handleNavigation,
-        handleNavigateToQuestion,
         setVoiceStep
     };
 };
+

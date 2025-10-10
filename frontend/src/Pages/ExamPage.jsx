@@ -6,11 +6,11 @@ import ExamHeader from '../Components/Exam/ExamHeader';
 import QuestionPanel from '../Components/Exam/QuestionPanel';
 import NavigationPanel from '../Components/Exam/NavigationPanel';
 import ExamFooter from '../Components/Exam/ExamFooter';
-import ExamVoiceStatus from '../Components/Exam/ExamVoiceStatus';
 import StudentVerification from '../Components/Exam/StudentVerification';
-import { useExamVoice } from '../hooks/useExamVoice';
 import { useExamData } from '../hooks/useExamData';
 import { useStudentVerification } from '../hooks/useStudentVerification';
+import { useExamVoice } from '../hooks/useExamVoice';
+import { speakText } from '../utils/speechUtils';
 
 /**
  * Main Page Component (ExamPage)
@@ -28,6 +28,8 @@ const ExamPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [timerStarted, setTimerStarted] = useState(false);
+    const [welcomeSpoken, setWelcomeSpoken] = useState(false);
+    const [lastReadQuestionId, setLastReadQuestionId] = useState(null);
 
     // Custom hooks
     const { studentName, studentId, isVerified, handleStudentVerified } = useStudentVerification(examId);
@@ -37,6 +39,7 @@ const ExamPage = () => {
 
     // Find the current question object from the array
     const currentQuestion = questions.find(q => q.id === currentQuestionId);
+    const isLoaded = questions.length > 0;
 
     // Voice handling functions
     const handleAnswer = (questionId, optionId) => {
@@ -44,26 +47,25 @@ const ExamPage = () => {
     };
 
     const handleNext = () => {
+        console.log('handleNext called, currentQuestionId:', currentQuestionId, 'questions.length:', questions.length);
         if (currentQuestionId < questions.length) {
             setCurrentQuestionId(prev => prev + 1);
         }
     };
 
     const handlePrev = () => {
+        console.log('handlePrev called, currentQuestionId:', currentQuestionId);
         if (currentQuestionId > 1) {
             setCurrentQuestionId(prev => prev - 1);
         }
     };
 
-    // Voice hook
-    const {
-        speechSupported,
-        isListening,
-        voiceStep,
-        startVoiceInput,
-        handleNavigation,
-        handleNavigateToQuestion
-    } = useExamVoice({
+    const handleNavigateToQuestion = (questionId) => {
+        setCurrentQuestionId(questionId);
+    };
+
+    // Voice hook (after dependencies)
+    const { startVoiceInput } = useExamVoice({
         currentQuestion,
         handleAnswer,
         handleNext,
@@ -74,20 +76,40 @@ const ExamPage = () => {
         examTitle,
         timerStarted,
         isVerified,
-        examId
+        examId,
+        setTimerStarted,
+        isLoaded
     });
 
-    // Start timer after voice instructions complete
+    // Speak welcome message when exam is loaded
     useEffect(() => {
-        if (isVerified && examId && questions.length > 0 && !timerStarted) {
-            if (speechSupported) {
-                // Timer will be started by voice hook after instructions
-            } else {
-                // Fallback for non-speech browsers
-                setTimerStarted(true);
-            }
+        if (isVerified && questions.length > 0 && !welcomeSpoken) {
+            speakText(`Welcome ${studentName}. Instructions: You can navigate using voice commands like next, previous, or say option A, B, C, D to select answers. Click on the screen to start voice input.`).then(() => {
+                setWelcomeSpoken(true);
+            }).catch((error) => {
+                console.error('Error speaking welcome:', error);
+                setWelcomeSpoken(true); // Still set to true to proceed
+            });
         }
-    }, [isVerified, examId, questions.length, timerStarted, speechSupported]);
+    }, [isVerified, questions.length, welcomeSpoken, studentName]);
+
+    // Start timer when exam is ready and welcome spoken
+    useEffect(() => {
+        if (isVerified && examId && questions.length > 0 && !timerStarted && welcomeSpoken) {
+            setTimerStarted(true);
+        }
+    }, [isVerified, examId, questions.length, timerStarted, welcomeSpoken]);
+
+    // Read current question when it changes and timer is started
+    useEffect(() => {
+        if (currentQuestion && timerStarted && currentQuestionId !== lastReadQuestionId) {
+            speakText(`Question: ${currentQuestion.questionText}. Options: A. ${currentQuestion.options[0].text}, B. ${currentQuestion.options[1].text}, C. ${currentQuestion.options[2].text}, D. ${currentQuestion.options[3].text}`).then(() => {
+                setLastReadQuestionId(currentQuestionId);
+            }).catch((error) => {
+                console.error('Error speaking question:', error);
+            });
+        }
+    }, [currentQuestion, timerStarted, currentQuestionId, lastReadQuestionId]);
 
     // Handle student verification with exam fetching
     const handleStudentVerifiedWithExams = async (studentData) => {
@@ -134,15 +156,13 @@ const ExamPage = () => {
         }
     };
 
-    // Enhanced keyboard navigation with voice feedback
+    // Keyboard navigation
     useEffect(() => {
         const handleKeyDown = (event) => {
             if (event.key === 'ArrowRight') {
-                handleNavigation('next');
+                handleNext();
             } else if (event.key === 'ArrowLeft') {
-                handleNavigation('prev');
-            } else if (event.key === 'Enter' && voiceStep === 'question') {
-                startVoiceInput();
+                handlePrev();
             }
         };
 
@@ -151,7 +171,7 @@ const ExamPage = () => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, [currentQuestionId, questions.length, voiceStep, handleNavigation, startVoiceInput]);
+    }, [currentQuestionId, questions.length]);
 
     // Show verification screen if not verified
     if (!isVerified) {
@@ -258,22 +278,13 @@ const ExamPage = () => {
     }
 
     return (
-        <div
-            className="h-screen bg-gray-100 font-sans flex flex-col overflow-hidden cursor-pointer"
-            onClick={startVoiceInput}
-        >
+        <div className="h-screen bg-gray-100 font-sans flex flex-col overflow-hidden cursor-pointer" onClick={startVoiceInput}>
             <ExamHeader
                 studentName={studentName}
                 studentId={studentId}
                 examTitle={examTitle}
                 examDuration={examDuration}
                 timerStarted={timerStarted}
-            />
-
-            <ExamVoiceStatus
-                speechSupported={speechSupported}
-                voiceStep={voiceStep}
-                isListening={isListening}
             />
 
             {/* Main content area that grows to fill available space */}
@@ -296,8 +307,8 @@ const ExamPage = () => {
             </main>
 
             <ExamFooter
-                onNext={() => handleNavigation('next')}
-                onPrev={() => handleNavigation('prev')}
+                onNext={handleNext}
+                onPrev={handlePrev}
                 onSubmit={handleSubmit}
                 currentQuestionId={currentQuestionId}
                 totalQuestions={questions.length}
