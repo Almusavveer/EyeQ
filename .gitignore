@@ -1,10 +1,9 @@
-﻿# ============================================
-# Frontend (React/Node.js/Vite) - frontend/
+# ============================================
+# Frontend (React/Node.js/Vite) - Client/
 # ============================================
 
 # Dependencies
 node_modules/
-frontend/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
@@ -13,22 +12,17 @@ lerna-debug.log*
 
 # Build outputs
 dist/
-frontend/dist/
 dist-ssr/
 build/
 .next/
 out/
 
-# Environment variables - NEVER commit these (contain sensitive data)
+# Environment variables
 .env
-backend/.env
-frontend/.env
-**/.env
-*.env
-
-# Environment templates are safe to commit
-# .env.example
-# .env.template
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Vite
 *.local
@@ -112,48 +106,3 @@ Desktop.ini
 *.rar
 *.tar
 *.zip
-
-# ============================================
-# Documentation & Reference Files
-# ============================================
-
-# Development/Migration documentation (keep locally but don't track)
-SPEECH_RECOGNITION.md
-ROLE_REMOVAL_SUMMARY.md
-FIREBASE_MIGRATION_SUMMARY.md
-AUTHENTICATION_FIXES.md
-backend/PRODUCTION_DEPLOYMENT.md
-backend/GET_FIREBASE_CREDENTIALS.md
-backend/FIREBASE_SETUP.md
-
-# Additional development documentation
-*_SUMMARY.md
-*_FIXES.md
-*_DEPLOYMENT.md
-*_SETUP.md
-*_MIGRATION.md
-DEVELOPMENT_*.md
-NOTES_*.md
-TODO_*.md
-
-# Keep main README files tracked
-# README.md
-# frontend/README.md
-# backend/README.md
-
-# Firebase service account credentials (never commit!)
-backend/firebase-service-account.json
-firebase-service-account.json
-**/firebase-service-account.json
-firebase-adminsdk-*.json
-**/firebase-adminsdk-*.json
-
-# Other sensitive files
-*.pem
-*.key
-*.crt
-*.p12
-*.pfx
-service-account*.json
-# Force ignore patterns
-SPEECH_RECOGNITION.md

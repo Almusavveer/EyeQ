@@ -36,16 +36,19 @@ def extract_questions_from_pdf(file):
         
         # Enhanced question detection patterns with priority order
         question_patterns = [
-            # Pattern 1: Numbered questions with options and answers (highest priority for your format)
+            # Pattern 1: Numbered questions with parentheses - 1) 2) 3) 4) (highest priority for your new format)
+            r'(?:^|\n)\s*(\d+)\)\s*(.+?)(?=(?:^|\n)\s*\d+\)|$)',
+            
+            # Pattern 2: Numbered questions with dots - 1. 2. 3. 4. (previous format)
             r'(?:^|\n)\s*(\d+)\.\s*(.+?)(?=(?:^|\n)\s*\d+\.|$)',
             
-            # Pattern 2: Explicit question numbering 
+            # Pattern 3: Explicit question numbering 
             r'(?:^|\n)\s*(?:Q\.?|Question|Problem)\s*\d+[\.\):]\s*(.+?)(?=(?:^|\n)\s*(?:Q\.?|Question|Problem)\s*\d+[\.\):]|(?:^|\n)\s*(?:A\.?|Answer|Solution)\s*\d+|$)',
             
-            # Pattern 3: Simple numbering with flexible spacing (fallback)
+            # Pattern 4: Simple numbering with flexible spacing (fallback)
             r'(?:^|\n)\s*(\d+)[\.\)]\s*(.+?)(?=(?:^|\n)\s*\d+[\.\)]|$)',
             
-            # Pattern 4: Question-like sentences (lower priority)
+            # Pattern 5: Question-like sentences (lower priority)
             r'(?:^|\n)\s*([A-Z][\w\s]{10,}(?:below|following|code|program|output|result)[\w\s]*\?)(?=(?:^|\n)|$)',
         ]
         
@@ -266,10 +269,18 @@ def is_question_text(text):
     if len(text_clean) > 10:  # Reduced threshold further
         additional_patterns = [
             r'^(what|which|who|when|where|why|how)\s+',  # Question words
+            r'^in\s+(what|which|who|when|where|why|how)\s+',  # "In which", "In what", etc.
             r'following.*correct',  # Common MCQ phrase
             r'output.*code',  # Programming questions
             r'code.*output',  # Programming questions
             r'^.{10,}.*\?$',  # Ends with ? but is substantial text (10+ chars before ?)
+            
+            # Geography and general knowledge patterns
+            r'country.*find',  # "In which country would you find"
+            r'pyramid.*giza',  # Pyramid questions
+            r'mountain.*world',  # Mountain questions
+            r'hardest.*substance',  # Material questions
+            r'wrote.*play',  # Literature questions
             
             # Language-specific patterns
             r'final\s+keyword',  # Java: "The final keyword"
@@ -360,18 +371,20 @@ def extract_options_from_text(question_text):
     
     # Multiple patterns to catch different option formats
     option_patterns = [
-        # Pattern 1: Uppercase letters with dots - A. B. C. D. (most common in academic PDFs)
-        # Look for each option separately on its own line or with clear separation
+        # Pattern 1: Uppercase letters with parentheses - A) B) C) D) (for your current format)
+        r'(?:^|\n)\s*([A-D])\)\s*([^\n\r]+?)(?=\s*(?:^|\n)\s*[A-D]\)|Answer:|$)',
+        
+        # Pattern 2: More flexible A) pattern
+        r'([A-D])\)\s*([^A-D\)]+?)(?=\s*[A-D]\)|Answer:|$)',
+        
+        # Pattern 3: Uppercase letters with dots - A. B. C. D. 
         r'(?:^|\n)\s*([A-D])\.\s*([^\n\r]+?)(?=\s*(?:^|\n)\s*[A-D]\.|Answer:|$)',
         
-        # Pattern 2: Find all A. B. C. D. options in sequence
+        # Pattern 4: Find all A. B. C. D. options in sequence
         r'([A-D])\.\s*([^A-D\n]+?)(?=\s*[A-D]\.|Answer:|$)',
         
-        # Pattern 3: Lowercase letters with parentheses - a) b) c) d)
+        # Pattern 5: Lowercase letters with parentheses - a) b) c) d)
         r'([a-d])\)\s*([^\n\r]+?)(?=\s*[a-d]\)|Answer:|$)',
-        
-        # Pattern 4: Uppercase letters with parentheses - A) B) C) D)
-        r'([A-D])\)\s*([^A-D\n]+?)(?=\s*[A-D]\)|Answer:|$)',
     ]
     
     # Try each pattern
@@ -394,8 +407,8 @@ def extract_options_from_text(question_text):
                 # Remove trailing punctuation and clean up
                 cleaned = re.sub(r'[,\s]*$', '', cleaned)
                 
-                # Must have actual content
-                if cleaned and len(cleaned) > 2:
+                # Must have actual content - be more lenient for short options like "Au", "K2"
+                if cleaned and len(cleaned) >= 1:  # Changed from > 2 to >= 1
                     clean_options.append(cleaned)
             
             # Only accept if we have at least 2 valid options (preferably 4 for MCQ)
@@ -411,9 +424,10 @@ def extract_correct_answer_from_text(question_text):
     
     # Patterns to find "Answer: X" where X is the correct option
     answer_patterns = [
+        r'Answer:\s*([A-D])\)\s*[^A-D]*',  # Answer: A) some text (prioritize this format)
+        r'Answer:\s*([A-D])\)',           # Answer: A)
         r'Answer:\s*([A-D])\.\s*[^A-D]*',  # Answer: A. some text
         r'Answer:\s*([A-D])\s*[^A-D]*',    # Answer: A some text  
-        r'Answer:\s*([A-D])\)',           # Answer: A)
         r'Answer:\s*([A-D])',             # Answer: A
     ]
     
@@ -434,6 +448,7 @@ def separate_question_from_options(question_text, options):
     
     # Remove the answer section first (everything from "Answer:" to end)
     answer_patterns = [
+        r'Answer:\s*[A-D]\).*$',     # Answer: A) explanation (prioritize this)
         r'Answer:\s*[A-D]\..*$',     # Answer: A. explanation
         r'Answer:\s*[A-D]\s*.*$',   # Answer: A explanation
         r'Answer:\s*[A-D]$',        # Answer: A (at end)

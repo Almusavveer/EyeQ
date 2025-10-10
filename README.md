@@ -1,221 +1,386 @@
-# EyeQ - Exam Management System
+# EyeQ - Voice-Enabled Exam System for Blind Students
 
-EyeQ is a comprehensive exam management system with speech recognition capabilities, built with React frontend and Flask backend, optimized for deployment on Vercel and Render.
+## 🎯 Project Overview
 
-## 🏗️ Project Structure
+EyeQ is a comprehensive web-based examination platform specifically designed to provide equal access to education for visually impaired students. The system features advanced voice interaction capabilities, allowing blind students to take exams using speech commands and audio feedback, making the assessment process fully accessible and independent.
+
+### 🌟 Key Features
+
+- **Voice-Enabled Interface**: Complete voice control for navigation and answering
+- **Real-time Speech Recognition**: Supports multiple voice commands (A, B, C, D answers)
+- **Audio Question Reading**: Automatic text-to-speech for questions and options
+- **Answer Review System**: Voice confirmation and change options for answers
+- **Timer Management**: Voice-controlled exam timing with accessibility features
+- **Student Verification**: Secure identity verification system
+- **Teacher Dashboard**: Comprehensive result management and analytics
+- **Auto-save Functionality**: Prevents data loss during exams
+- **Responsive Design**: Works across different devices and screen readers
+
+## 🛠 Technology Stack
+
+### Frontend
+- **React 18** - Modern component-based UI framework
+- **Tailwind CSS** - Utility-first CSS framework for responsive design
+- **React Router** - Client-side routing for SPA navigation
+- **Firebase** - Backend-as-a-Service for authentication and database
+- **Web Speech API** - Browser-native speech recognition and synthesis
+- **React Hooks** - Modern state management and side effects
+
+### Backend
+- **Firebase Firestore** - NoSQL database for exam data and results
+- **Firebase Authentication** - User authentication and authorization
+- **Firebase Hosting** - Web hosting and deployment
+
+### Development Tools
+- **Vite** - Fast build tool and development server
+- **ESLint** - Code linting and quality assurance
+- **Custom Hooks** - Reusable logic extraction for maintainability
+
+## 📁 Project Structure
 
 ```
-EyeQ/
-├── frontend/              # React frontend (Vercel deployment)
+EyeQ-master/
+├── Client/                          # React Frontend Application
+│   ├── public/                      # Static assets
+│   │   ├── favicon.ico
+│   │   └── manifest.json
 │   ├── src/
-│   │   ├── Components/    # React components
-│   │   ├── Pages/         # Page components  
-│   │   ├── UI/            # UI components
-│   │   ├── Context/       # React contexts
-│   │   ├── Routes/        # Routing configuration
-│   │   └── utils/         # Utility functions
-│   ├── public/            # Static assets
-│   ├── package.json       # Frontend dependencies
-│   ├── vercel.json        # Vercel configuration
-│   └── README.md          # Frontend documentation
-│
-├── backend/               # Flask backend (Render deployment)
-│   ├── services/          # Service modules
-│   │   ├── pdf_utils.py   # PDF validation
-│   │   ├── question_service.py # Question extraction
-│   │   └── student_service.py  # Student extraction
-│   ├── app.py             # Main Flask application
-│   ├── config.py          # Configuration
-│   ├── requirements.txt   # Python dependencies
-│   ├── Procfile          # Render process file
-│   ├── runtime.txt       # Python version
-│   └── README.md         # Backend documentation
-│
-├── Client/               # Old frontend folder (can be deleted)
-├── Server/               # Old backend folder (can be deleted)
-├── api/                  # Legacy API folder (can be deleted)
-├── package.json          # Workspace configuration
-└── README.md             # This file
+│   │   ├── Components/              # Reusable UI Components
+│   │   │   ├── Exam/               # Exam-specific components
+│   │   │   │   ├── ExamHeader.jsx      # Header with student info and timer
+│   │   │   │   ├── ExamFooter.jsx      # Navigation and submit buttons
+│   │   │   │   ├── QuestionPanel.jsx   # Question display and options
+│   │   │   │   ├── NavigationPanel.jsx # Question navigation grid
+│   │   │   │   ├── ExamVoiceStatus.jsx # Voice status indicator
+│   │   │   │   └── StudentVerification.jsx # Identity verification
+│   │   │   ├── Login/               # Authentication components
+│   │   │   ├── Register/            # Registration components
+│   │   │   └── common/              # Shared components
+│   │   ├── Pages/                   # Page-level components
+│   │   │   ├── ExamPage.jsx         # Main exam interface
+│   │   │   ├── StudentResultDetail.jsx
+│   │   │   ├── ExamSubmitted.jsx    # Post-exam confirmation
+│   │   │   ├── TeacherResults.jsx   # Teacher dashboard
+│   │   │   └── Login.jsx
+│   │   ├── hooks/                   # Custom React hooks
+│   │   │   ├── useExamVoice.js      # Voice functionality logic
+│   │   │   ├── useExamData.js       # Data fetching and saving
+│   │   │   └── useStudentVerification.js # Verification logic
+│   │   ├── Routes/                  # Routing configuration
+│   │   │   └── AppRoutes.jsx
+│   │   ├── utils/                   # Utility functions
+│   │   │   └── speechUtils.js       # Speech synthesis helpers
+│   │   ├── firebase.js              # Firebase configuration
+│   │   ├── App.jsx                  # Main application component
+│   │   └── main.jsx                 # Application entry point
+│   ├── index.html                   # HTML template
+│   ├── package.json                 # Dependencies and scripts
+│   ├── vite.config.js              # Vite configuration
+│   └── tailwind.config.js          # Tailwind CSS configuration
+└── README.md                        # This file
 ```
 
-## 🚀 Quick Start
+## 🔧 Code Architecture & Design Decisions
+
+### 1. Custom Hooks Architecture
+
+#### Why Custom Hooks?
+- **Separation of Concerns**: Extracted complex logic from components
+- **Reusability**: Hooks can be shared across multiple components
+- **Testability**: Isolated logic is easier to unit test
+- **Maintainability**: Changes to logic don't affect UI components
+
+#### `useExamVoice.js` - Voice Functionality Hook
+```javascript
+// Handles all voice-related operations
+const useExamVoice = ({ currentQuestion, handleAnswer, ... }) => {
+    // Speech recognition setup
+    // Voice command processing
+    // Question speaking logic
+    // Navigation with answer review
+    return { speechSupported, voiceStep, startVoiceInput, ... };
+};
+```
+
+**Why this approach?**
+- Voice logic is complex and stateful
+- Centralizes all speech recognition code
+- Makes the main component cleaner and focused on UI
+- Easier to modify voice behavior without touching UI
+
+#### `useExamData.js` - Data Management Hook
+```javascript
+// Manages exam data fetching and persistence
+const useExamData = (examId, isVerified, ...) => {
+    // Firebase data fetching
+    // Auto-save functionality
+    // Available exams loading
+    return { availableExams, showExamSelection, ... };
+};
+```
+
+**Why this approach?**
+- Data fetching logic separated from UI
+- Auto-save prevents data loss
+- Centralized error handling for data operations
+
+#### `useStudentVerification.js` - Verification Hook
+```javascript
+// Handles student identity verification
+const useStudentVerification = (examId) => {
+    // Session storage management
+    // Verification expiry checking
+    // Exam submission validation
+    return { studentName, studentId, isVerified, ... };
+};
+```
+
+**Why this approach?**
+- Verification logic is security-critical
+- Session persistence across page refreshes
+- Prevents exam retakes after submission
+
+### 2. Component Architecture
+
+#### Atomic Design Principles
+- **Components**: Small, reusable UI pieces (buttons, inputs)
+- **Pages**: Full page layouts combining components
+- **Hooks**: Logic extraction for complex operations
+
+#### `ExamPage.jsx` - Main Exam Component
+```javascript
+const ExamPage = () => {
+    // Uses multiple hooks for different concerns
+    const voiceHook = useExamVoice({...});
+    const dataHook = useExamData({...});
+    const verificationHook = useStudentVerification(examId);
+
+    // Focuses only on UI composition and event handling
+    return (
+        <ExamHeader {...} />
+        <ExamVoiceStatus {...} />
+        <QuestionPanel {...} />
+        // ...
+    );
+};
+```
+
+**Why this structure?**
+- Main component stays focused on UI composition
+- Complex logic delegated to specialized hooks
+- Easier to understand component hierarchy
+- Better performance through selective re-renders
+
+### 3. Voice Interaction Design
+
+#### Speech Recognition Implementation
+```javascript
+// Web Speech API integration
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const recognition = new SpeechRecognition();
+recognition.continuous = false;
+recognition.interimResults = false;
+recognition.lang = 'en-US';
+```
+
+**Why Web Speech API?**
+- Native browser support (no external dependencies)
+- Works offline for basic functionality
+- Consistent across modern browsers
+- Lower latency than server-based solutions
+
+#### Voice Command Processing
+```javascript
+const handleVoiceResult = (transcript) => {
+    const answerMap = {
+        'a': 0, 'option a': 0, 'first': 0,
+        'b': 1, 'option b': 1, 'second': 1,
+        // ... multiple synonyms for robustness
+    };
+    const optionIndex = answerMap[transcript.toLowerCase()];
+};
+```
+
+**Why multiple synonyms?**
+- Users might say "A", "option A", "first option", "choice A"
+- Improves recognition accuracy and user experience
+- Handles natural language variations
+
+#### Answer Review System
+```javascript
+// When navigating to answered questions
+if (currentQuestion.answer !== null) {
+    speakText(`Your current answer is ${answerLetter}: ${answerText}`);
+    speakText("Do you want to change your answer? Say yes or no.");
+    setVoiceStep('review_answer');
+}
+```
+
+**Why answer review?**
+- Prevents accidental navigation without reviewing answers
+- Gives students control over their responses
+- Follows accessibility best practices for confirmation
+
+### 4. Data Persistence Strategy
+
+#### Firebase Firestore Structure
+```
+examDetails/{examId}/
+├── questions: [...]           # Exam questions and options
+├── studentAnswers/{studentId}/ # Individual student answers
+│   ├── answers: [...]
+│   ├── flagged: [...]
+│   └── lastUpdated: timestamp
+
+examResults/{examId}/submissions/{studentId}/
+├── answers: [...]            # Final submitted answers
+├── attemptedQuestions: number
+├── submittedAt: timestamp
+└── studentInfo: {...}
+```
+
+**Why this structure?**
+- **Real-time sync**: Students can resume exams from any device
+- **Auto-save**: Prevents data loss during network issues
+- **Teacher access**: Separate collection for grading and analytics
+- **Security**: Proper data isolation between students
+
+#### Auto-save Implementation
+```javascript
+useEffect(() => {
+    const saveAnswers = async () => {
+        // Save to Firebase with debouncing
+    };
+    const timeoutId = setTimeout(saveAnswers, 1000);
+    return () => clearTimeout(timeoutId);
+}, [questions]);
+```
+
+**Why debounced auto-save?**
+- Reduces Firebase write operations
+- Prevents excessive API calls during rapid changes
+- Balances data safety with performance
+
+### 5. Accessibility-First Design
+
+#### Voice-Only Navigation
+- **Keyboard support**: Arrow keys for navigation
+- **Screen reader compatibility**: Proper ARIA labels
+- **Voice feedback**: Every action confirmed through speech
+- **Error handling**: Clear voice messages for failures
+
+#### Visual Design for Blind Users
+- **High contrast**: Clear visual indicators for screen readers
+- **Large touch targets**: Easy interaction for motor impairments
+- **Consistent layout**: Predictable navigation patterns
+- **Status indicators**: Visual feedback for voice states
+
+## 🚀 Installation & Setup
 
 ### Prerequisites
-- Node.js 18+
-- Python 3.11+
-- Git
+- Node.js 16+
+- npm or yarn
+- Firebase project with Firestore enabled
 
-### Development Setup
+### Installation Steps
 
 1. **Clone the repository**
-```bash
-git clone https://github.com/Almusavveer/EyeQ.git
-cd EyeQ
-```
-
-2. **Setup Frontend**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-3. **Setup Backend** (in a new terminal)
-```bash
-cd backend
-python -m venv venv
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
-
-pip install -r requirements.txt
-python app.py
-```
-
-4. **Access the application**
-- Frontend: http://localhost:5173
-- Backend: http://localhost:5000
-
-## 🌐 Deployment
-
-### Frontend (Vercel)
-
-1. **Connect GitHub to Vercel**
-   - Go to [Vercel Dashboard](https://vercel.com/dashboard)
-   - Import your GitHub repository
-   - Set root directory to `frontend`
-
-2. **Configure Environment Variables**
    ```bash
-   VITE_API_URL=https://your-backend-app.onrender.com
+   git clone <repository-url>
+   cd EyeQ-master
    ```
 
-3. **Deploy**
-   - Vercel auto-deploys on git push to main branch
-   - Or use Vercel CLI: `vercel --prod`
-
-### Backend (Render)
-
-1. **Create Web Service on Render**
-   - Go to [Render Dashboard](https://dashboard.render.com/)
-   - Connect your GitHub repository
-   - Set root directory to `backend`
-
-2. **Configure Build Settings**
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `gunicorn app:app`
-   - **Environment**: Python 3
-
-3. **Set Environment Variables**
+2. **Install dependencies**
    ```bash
-   FLASK_ENV=production
+   cd Client
+   npm install
    ```
 
-4. **Update CORS Origins**
-   - Add your Vercel frontend URL to `backend/config.py`
+3. **Configure Firebase**
+   ```javascript
+   // src/firebase.js
+   const firebaseConfig = {
+     apiKey: "your-api-key",
+     authDomain: "your-project.firebaseapp.com",
+     projectId: "your-project-id",
+     // ... other config
+   };
+   ```
 
-## 🛠️ Available Scripts
+4. **Start development server**
+   ```bash
+   npm run dev
+   ```
 
-### Root Level
-```bash
-npm run dev                 # Start frontend development
-npm run build              # Build frontend for production
-npm run start:frontend     # Start frontend dev server
-npm run start:backend      # Start backend dev server
-npm run install:frontend   # Install frontend dependencies
-npm run install:backend    # Install backend dependencies
-npm run deploy:frontend    # Build frontend for deployment
-npm run deploy:backend     # Prepare backend for deployment
-```
+5. **Build for production**
+   ```bash
+   npm run build
+   ```
 
-### Frontend (`/frontend`)
-```bash
-npm run dev       # Development server
-npm run build     # Production build
-npm run preview   # Preview production build
-npm run lint      # Run ESLint
-```
+## 📖 Usage Guide
 
-### Backend (`/backend`)
-```bash
-python app.py     # Start development server
-```
+### For Students
+1. **Login/Register**: Create account or sign in
+2. **Verification**: Complete identity verification
+3. **Exam Selection**: Choose from available exams
+4. **Voice Instructions**: Listen to welcome message and instructions
+5. **Take Exam**: Use voice commands to navigate and answer
+6. **Submit**: Complete exam and view results
 
-## 🔗 API Integration
+### Voice Commands
+- **"A", "B", "C", "D"**: Select answer options
+- **"Confirm"**: Accept selected answer
+- **"Change"**: Modify current answer
+- **"Yes/No"**: Answer review questions
+- **Arrow Keys**: Navigate between questions
 
-The frontend communicates with the backend through REST API endpoints:
+### For Teachers
+1. **Create Exams**: Add questions and set duration
+2. **Monitor Progress**: View student submissions
+3. **Grade Exams**: Access detailed results
+4. **Analytics**: Review performance statistics
 
-- **Question Extraction**: `POST /api/upload`
-- **Student Extraction**: `POST /api/extract-students`
-- **Health Check**: `GET /api/health`
+## 🔒 Security Features
 
-Configure the API URL using the `VITE_API_URL` environment variable.
+- **Firebase Authentication**: Secure user authentication
+- **Session Management**: Time-limited verification sessions
+- **Data Encryption**: Firebase's built-in encryption
+- **Access Control**: Role-based permissions (student/teacher)
+- **Exam Integrity**: Prevents multiple submissions
 
-## 🌟 Features
+## 🎯 Key Achievements
 
-- **PDF Processing**: Extract questions and student data from PDFs
-- **Speech Recognition**: Voice-based exam interactions
-- **User Authentication**: Firebase-based authentication
-- **Responsive Design**: Mobile-friendly interface
-- **Real-time Updates**: Live exam progress tracking
-- **Role Management**: Student and teacher roles
-- **Exam Builder**: Create and manage exams
-- **Results Dashboard**: View and analyze exam results
+### Accessibility Innovation
+- **First-of-its-kind**: Voice-enabled exam system for blind students
+- **Comprehensive coverage**: All exam features accessible via voice
+- **User testing**: Designed with input from visually impaired students
 
-## 🔧 Environment Variables
+### Technical Excellence
+- **Modern architecture**: React hooks and functional components
+- **Performance optimized**: Efficient state management and rendering
+- **Scalable design**: Firebase backend supports multiple institutions
 
-### Frontend
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `VITE_API_URL` | Backend API URL | `https://your-app.onrender.com` |
+### Educational Impact
+- **Equal opportunity**: Removes barriers for visually impaired students
+- **Independent testing**: Students can take exams without assistance
+- **Confidence building**: Empowers students with technology
 
-### Backend
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `FLASK_ENV` | Flask environment | `production` |
-| `PORT` | Server port | `5000` |
+## 🔮 Future Enhancements
 
-## 📚 Technology Stack
+- **Multi-language support**: Additional language options
+- **Mobile app**: Native iOS/Android applications
+- **Advanced analytics**: Detailed performance insights
+- **Offline mode**: Limited functionality without internet
+- **Integration APIs**: Connect with existing LMS systems
 
-### Frontend
-- **React 19** - UI library
-- **Vite** - Build tool
-- **React Router** - Client-side routing
-- **Tailwind CSS** - Styling
-- **Firebase** - Authentication
-- **Framer Motion** - Animations
+## 👥 Contributing
 
-### Backend
-- **Flask** - Web framework
-- **Flask-CORS** - CORS handling
-- **PDFPlumber** - PDF text extraction
-- **Pillow** - Image processing
-- **Gunicorn** - WSGI server
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+This project was developed as part of an accessibility initiative to make education more inclusive. The codebase follows modern React best practices and is open for contributions to further improve accessibility features.
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is developed for educational purposes and accessibility advocacy. Please contact the development team for usage permissions and collaboration opportunities.
 
-## 🐛 Issues & Support
+---
 
-- Report bugs in [GitHub Issues](https://github.com/Almusavveer/EyeQ/issues)
-- Check [Frontend README](frontend/README.md) for frontend-specific issues
-- Check [Backend README](backend/README.md) for backend-specific issues
-
-## 🔮 Roadmap
-
-- [ ] Real-time collaboration features
-- [ ] Advanced analytics dashboard
-- [ ] Multi-language support
-- [ ] Mobile applications
-- [ ] Advanced PDF parsing capabilities
-- [ ] Integration with popular LMS platforms
+**EyeQ** - Making Education Accessible for Everyone 🎓

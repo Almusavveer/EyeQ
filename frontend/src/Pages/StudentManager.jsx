@@ -66,7 +66,7 @@ const StudentManager = () => {
 
     // Use the student extraction API endpoint
     const apiUrl = process.env.NODE_ENV === 'production' 
-      ? 'https://eyeq-backend-0wa9.onrender.com/api/extract-students' 
+      ? '/api/extract-students' 
       : 'http://127.0.0.1:5000/api/extract-students';
 
     try {
@@ -97,7 +97,7 @@ const StudentManager = () => {
       
       // If it's a network error and we're in development, provide helpful message
       if (error.message.includes('fetch') && process.env.NODE_ENV !== 'production') {
-        throw new Error('Unable to connect to backend server. Please ensure the Flask backend is running on http://127.0.0.1:5000 or check https://eyeq-backend-0wa9.onrender.com');
+        throw new Error('Unable to connect to backend server. Please ensure the Flask backend is running on http://127.0.0.1:5000');
       }
       
       throw error;

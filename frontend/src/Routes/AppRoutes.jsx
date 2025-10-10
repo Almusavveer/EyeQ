@@ -9,6 +9,9 @@ import Role from "../Pages/Role";
 import ExamPage from "../Pages/ExamPage";
 import StudentManager from "../Pages/StudentManager";
 import TeacherResults from "../Pages/TeacherResults";
+import ExamSubmitted from "../Pages/ExamSubmitted";
+import StudentResultDetail from "../Pages/StudentResultDetail";
+import ProtectedRoute from "../Components/ProtectedRoute";
 
 const AppRoutes = () => {
   return (
@@ -25,12 +28,14 @@ const AppRoutes = () => {
         path="/register"
         element={<Register />}
       />
-      <Route path="/home" element={<Home />} />
-      <Route path="/exambuilder" element={<ExamBuilder />} />
-      <Route path="/students" element={<StudentManager />} />
-      <Route path="/review/:examId" element={<ReviewEdit />} />
-      <Route path="/review" element={<ReviewEdit />} />
-      <Route path="/results/:examId" element={<TeacherResults />} />
+      <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+      <Route path="/exambuilder" element={<ProtectedRoute><ExamBuilder /></ProtectedRoute>} />
+      <Route path="/students" element={<ProtectedRoute><StudentManager /></ProtectedRoute>} />
+      <Route path="/review/:examId" element={<ProtectedRoute><ReviewEdit /></ProtectedRoute>} />
+      <Route path="/review" element={<ProtectedRoute><ReviewEdit /></ProtectedRoute>} />
+      <Route path="/results/:examId" element={<ProtectedRoute><TeacherResults /></ProtectedRoute>} />
+      <Route path="/exam-submitted" element={<ExamSubmitted />} />
+      <Route path="/result-detail" element={<StudentResultDetail />} />
     </Routes>
   );
 };

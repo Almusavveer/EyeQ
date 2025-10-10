@@ -19,20 +19,6 @@ app = Flask(__name__)
 # Configure CORS
 CORS(app, origins=CORS_ORIGINS)
 
-@app.route("/", methods=["GET"])
-def root():
-    """Root endpoint - API information"""
-    return jsonify({
-        "message": "EyeQ Backend API",
-        "version": "1.0.0",
-        "status": "running",
-        "endpoints": {
-            "health": "/api/health",
-            "extract_students": "/api/extract-students",
-            "upload": "/api/upload"
-        }
-    }), 200
-
 @app.route("/api/extract-students", methods=["POST", "OPTIONS"])
 def extract_students():
     """Extract student information from uploaded PDF"""

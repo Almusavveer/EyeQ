@@ -19,8 +19,10 @@ const PdfUpload = ({
     const formData = new FormData();
     formData.append('file', file);
 
-    // Use environment variable for API URL
-    const apiUrl = `${import.meta.env.VITE_API_BASE_URL}/api/upload`;
+    // Use production API URL when deployed, localhost for development
+    const apiUrl = process.env.NODE_ENV === 'production' 
+      ? '/api/upload' 
+      : 'http://127.0.0.1:5000/api/upload';
 
     try {
       const response = await fetch(apiUrl, {

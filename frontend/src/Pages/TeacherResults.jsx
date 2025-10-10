@@ -17,32 +17,32 @@ const TeacherResults = () => {
   useEffect(() => {
     const fetchExamResults = async () => {
       if (!user || !examId) return;
-      
+
       try {
         // Fetch exam details
         const examRef = doc(db, 'examDetails', examId);
         const examSnap = await getDoc(examRef);
-        
+
         if (!examSnap.exists()) {
           setError('Exam not found');
           return;
         }
-        
+
         const exam = examSnap.data();
-        
+
         // Check if current user is the exam creator
         if (exam.createdBy !== user.uid) {
           setError('You are not authorized to view these results');
           return;
         }
-        
+
         setExamData(exam);
-        
+
         // Fetch student results (this would need to be implemented based on your data structure)
         // For now, showing placeholder structure
         const resultsRef = collection(db, 'examResults', examId, 'submissions');
         const resultsSnap = await getDocs(resultsRef);
-        
+
         const results = [];
         resultsSnap.forEach((doc) => {
           results.push({
@@ -50,9 +50,9 @@ const TeacherResults = () => {
             ...doc.data()
           });
         });
-        
+
         setStudentResults(results);
-        
+
       } catch (err) {
         console.error('Error fetching exam results:', err);
         setError('Failed to load exam results');
@@ -60,26 +60,59 @@ const TeacherResults = () => {
         setLoading(false);
       }
     };
-    
+
     fetchExamResults();
   }, [user, examId]);
 
-  const calculateScore = (answers, questions) => {
-    if (!answers || !questions) return 0;
-    return answers.reduce((score, answer) => {
-      const question = questions.find(q => q.text === answer.question);
-      return question && question.correctAnswer === answer.answer ? score + 1 : score;
+  const calculateScore = (result) => {
+    // If score is already calculated and saved, use it
+    if (result.score !== undefined) {
+      return result.score;
+    }
+
+    // Calculate score from answers array (which contains option indices)
+    if (!result.answers || !examData?.questions) return 0;
+
+    return result.answers.reduce((score, studentAnswerIndex, questionIndex) => {
+      const question = examData.questions[questionIndex];
+      if (!question) return score;
+
+      // Convert correctAnswer to index if needed
+      let correctAnswerIndex = question.correctAnswer;
+
+      if (correctAnswerIndex === null || correctAnswerIndex === undefined) {
+        return score;
+      } else if (typeof correctAnswerIndex === 'number') {
+        // Already an index
+        correctAnswerIndex = correctAnswerIndex;
+      } else if (typeof correctAnswerIndex === 'string' && correctAnswerIndex.length === 1 && correctAnswerIndex.match(/[A-D]/i)) {
+        // Letter like "A", "B", etc.
+        correctAnswerIndex = correctAnswerIndex.toUpperCase().charCodeAt(0) - 65;
+      } else {
+        // Try to find the matching option by text
+        const foundIndex = (question.options || []).findIndex(opt => {
+          const optText = typeof opt === 'string' ? opt : (opt.text || opt);
+          return optText && correctAnswerIndex && optText.trim().toLowerCase() === correctAnswerIndex.toString().trim().toLowerCase();
+        });
+        correctAnswerIndex = foundIndex >= 0 ? foundIndex : null;
+      }
+
+      // Compare student answer index with correct answer index
+      return studentAnswerIndex !== null && studentAnswerIndex === correctAnswerIndex ? score + 1 : score;
     }, 0);
   };
 
   const exportResults = () => {
     // Implement CSV export functionality
-    const csvContent = "data:text/csv;charset=utf-8," + 
+    const csvContent = "data:text/csv;charset=utf-8," +
       "Student Name,Roll Number,Score,Total Questions,Percentage,Submission Time\n" +
-      studentResults.map(result => 
-        `${result.studentName || 'N/A'},${result.rollNumber || 'N/A'},${calculateScore(result.answers, examData?.questions)},${examData?.questions?.length || 0},${((calculateScore(result.answers, examData?.questions) / (examData?.questions?.length || 1)) * 100).toFixed(1)}%,${new Date(result.submittedAt?.toDate?.() || result.submittedAt).toLocaleString()}`
-      ).join("\n");
-    
+      studentResults.map(result => {
+        const score = calculateScore(result);
+        const totalQuestions = result.totalQuestions || examData?.questions?.length || 0;
+        const percentage = totalQuestions > 0 ? ((score / totalQuestions) * 100).toFixed(1) : 0;
+        return `${result.studentName || 'N/A'},${result.rollNumber || 'N/A'},${score},${totalQuestions},${percentage}%,${new Date(result.submittedAt?.toDate?.() || result.submittedAt).toLocaleString()}`;
+      }).join("\n");
+
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -105,7 +138,7 @@ const TeacherResults = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center space-y-4">
           <p className="text-red-600 text-lg">{error}</p>
-          <button 
+          <button
             onClick={() => navigate('/home')}
             className="px-6 py-2 bg-yellow-400 hover:bg-yellow-500 rounded-lg font-medium transition-colors"
           >
@@ -123,7 +156,7 @@ const TeacherResults = () => {
         <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <button 
+              <button
                 onClick={() => navigate('/home')}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
@@ -138,9 +171,9 @@ const TeacherResults = () => {
                       try {
                         // Try examDate first, then examTime as fallback
                         const dateField = examData?.examDate || examData?.examTime;
-                        
+
                         if (!dateField) return 'Not specified';
-                        
+
                         // Handle Firestore Timestamp objects
                         let date;
                         if (dateField.seconds !== undefined) {
@@ -153,7 +186,7 @@ const TeacherResults = () => {
                           // Regular date string or Date object
                           date = new Date(dateField);
                         }
-                        
+
                         return !isNaN(date.getTime()) ? date.toLocaleDateString() : 'Not specified';
                       } catch (error) {
                         console.error('Date formatting error:', error);
@@ -191,8 +224,8 @@ const TeacherResults = () => {
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Average Score</h3>
             <p className="text-3xl font-bold text-green-600">
-              {studentResults.length > 0 
-                ? (studentResults.reduce((sum, result) => sum + calculateScore(result.answers, examData?.questions), 0) / studentResults.length).toFixed(1)
+              {studentResults.length > 0
+                ? (studentResults.reduce((sum, result) => sum + calculateScore(result), 0) / studentResults.length).toFixed(1)
                 : '0'
               }
             </p>
@@ -201,9 +234,11 @@ const TeacherResults = () => {
             <h3 className="text-lg font-semibold text-gray-800 mb-2">Pass Rate</h3>
             <p className="text-3xl font-bold text-purple-600">
               {studentResults.length > 0
-                ? (studentResults.filter(result => 
-                    (calculateScore(result.answers, examData?.questions) / (examData?.questions?.length || 1)) >= 0.6
-                  ).length / studentResults.length * 100).toFixed(0)
+                ? (studentResults.filter(result => {
+                    const score = calculateScore(result);
+                    const totalQuestions = result.totalQuestions || examData?.questions?.length || 1;
+                    return (score / totalQuestions) >= 0.6;
+                  }).length / studentResults.length * 100).toFixed(0)
                 : '0'
               }%
             </p>
@@ -215,7 +250,7 @@ const TeacherResults = () => {
           <div className="p-6 border-b">
             <h2 className="text-xl font-semibold text-gray-800">Student Results</h2>
           </div>
-          
+
           {studentResults.length === 0 ? (
             <div className="p-8 text-center text-gray-500">
               <p className="text-lg">No submissions yet</p>
@@ -236,10 +271,10 @@ const TeacherResults = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {studentResults.map((result, index) => {
-                    const score = calculateScore(result.answers, examData?.questions);
-                    const total = examData?.questions?.length || 0;
-                    const percentage = total > 0 ? (score / total * 100).toFixed(1) : '0';
-                    
+                    const score = calculateScore(result);
+                    const totalQuestions = result.totalQuestions || examData?.questions?.length || 0;
+                    const percentage = totalQuestions > 0 ? ((score / totalQuestions) * 100).toFixed(1) : 0;
+
                     return (
                       <tr key={index} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -249,7 +284,7 @@ const TeacherResults = () => {
                           {result.rollNumber || 'N/A'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">{score}/{total}</span>
+                          <span className="text-sm font-medium text-gray-900">{score}/{totalQuestions}</span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
@@ -269,11 +304,11 @@ const TeacherResults = () => {
                           })()}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <button 
+                          <button
                             className="text-blue-600 hover:text-blue-900 font-medium"
                             onClick={() => {
-                              // Implement detailed view functionality
-                              console.log('View detailed results for:', result);
+                              // Navigate to detailed result view page with result data
+                              navigate('/result-detail', { state: { result, examData } });
                             }}
                           >
                             View Details
