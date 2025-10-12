@@ -1,0 +1,4 @@
+- [x] Edit useExamVoice.js to add speech response "answer confirmed moving to next question" when confirming answer
+- [x] Make voice message in student verification page start automatically when page loads (not possible due to browser security restrictions - message plays on first user interaction)
+- [x] Update useExamVoice.js to handle submit confirmation flow properly
+- [x] Disable UI click interactions for answer selection, navigation, and submission (voice-only operation)

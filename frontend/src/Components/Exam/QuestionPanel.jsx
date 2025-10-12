@@ -23,11 +23,10 @@ const QuestionPanel = ({ question, onAnswer }) => {
           return (
             <div
               key={option.id}
-              onClick={() => onAnswer(question.id, option.id)}
-              className={`flex items-center p-4 border-2 rounded-lg transition-all duration-200 cursor-pointer ${
+              className={`flex items-center p-4 border-2 rounded-lg transition-all duration-200 ${
                 question.answer === option.id
                   ? 'bg-blue-50 border-blue-500 ring-2 ring-blue-200'
-                  : 'border-gray-300 hover:border-gray-400'
+                  : 'border-gray-300'
               }`}
             >
               <span className={`w-8 h-8 rounded-full border-2 flex-shrink-0 mr-4 flex items-center justify-center font-bold text-sm ${

@@ -31,7 +31,8 @@ export const useExamVoice = ({
     examId,
     setTimerStarted,
     isLoaded,
-    speakText
+    speakText,
+    handleSubmit
 }) => {
     // Refs to hold the latest state and props to avoid stale closures
     const questionsRef = useRef(questions);
@@ -43,6 +44,7 @@ export const useExamVoice = ({
     const handleNextRef = useRef(handleNext);
     const handlePrevRef = useRef(handlePrev);
     const speakTextRef = useRef(speakText);
+    const handleSubmitRef = useRef(handleSubmit);
 
     // Voice-related states
     const [speechSupported, setSpeechSupported] = useState(false);
@@ -50,6 +52,23 @@ export const useExamVoice = ({
     const [voiceStep, setVoiceStepState] = useState('question'); // 'question', 'listening', or 'confirming'
     const [pendingOptionId, setPendingOptionId] = useState(null);
     const [isConfirming, setIsConfirming] = useState(false);
+    // Keep a ref in sync with isConfirming so the recognition callback (which is
+    // attached once) can observe the current confirming state without stale
+    // closures.
+    const isConfirmingRef = useRef(false);
+
+    const [isSubmitConfirming, setIsSubmitConfirming] = useState(false);
+    const isSubmitConfirmingRef = useRef(false);
+
+    const setIsConfirmingSafe = (val) => {
+        isConfirmingRef.current = val;
+        setIsConfirming(val);
+    };
+
+    const setIsSubmitConfirmingSafe = (val) => {
+        isSubmitConfirmingRef.current = val;
+        setIsSubmitConfirming(val);
+    };
     
     const recognitionRef = useRef(null);
     const currentVoiceStepRef = useRef('question');
@@ -65,7 +84,8 @@ export const useExamVoice = ({
         handleNextRef.current = handleNext;
         handlePrevRef.current = handlePrev;
         speakTextRef.current = speakText;
-    }, [questions, currentQuestion, isLoaded, handleAnswer, handleNext, handlePrev, speakText]);
+        handleSubmitRef.current = handleSubmit;
+    }, [questions, currentQuestion, isLoaded, handleAnswer, handleNext, handlePrev, speakText, handleSubmit]);
 
     // Function to safely set the voice step state and ref
     const setVoiceStep = (step) => {
@@ -99,7 +119,7 @@ export const useExamVoice = ({
             setIsListening(false);
             isProcessingVoiceRef.current = false;
             // Only reset the voice step to 'question' if we are not in the middle of a confirmation flow.
-            if (currentVoiceStepRef.current !== 'confirming') {
+            if (currentVoiceStepRef.current !== 'confirming' && currentVoiceStepRef.current !== 'submit_confirm') {
                 setVoiceStep('question');
             }
         };
@@ -141,8 +161,8 @@ export const useExamVoice = ({
             handleNextRef.current();
             stopRecognition();
             return;
-        } 
-        
+        }
+
         if (transcript.includes('previous') || transcript.includes('prev') || transcript.includes('back') || transcript.includes('go back') || transcript.includes('previous question')) {
             console.log('Calling handlePrev via ref');
             setPendingOptionId(null);
@@ -153,15 +173,39 @@ export const useExamVoice = ({
             return;
         }
 
-        if (isConfirming) {
+        if (transcript.includes('submit') || transcript.includes('submit exam')) {
+            console.log('Submitting exam via voice');
+            setPendingOptionId(null);
+            setIsConfirming(false);
+            setVoiceStep('question');
+            handleSubmitRef.current();
+            stopRecognition();
+            return;
+        }
+
+        if (isConfirmingRef.current) {
             // In confirmation mode
             if (transcript.includes('confirm') || transcript.includes('yes') || transcript.includes('ok') || transcript.includes('okay') || transcript.includes('proceed')) {
-                // Confirm the selection and go to next
-                console.log('Confirming selection and going to next question');
+                // Confirm the selection and go to next or submit
+                console.log('Confirming selection');
                 setPendingOptionId(null);
-                setIsConfirming(false);
+                setIsConfirmingSafe(false);
                 setVoiceStep('question'); // FIX: Reset the voice step to allow the next command cycle
-                handleNextRef.current();
+                const isLastQuestion = currentQuestionRef.current.id === questionsRef.current.length;
+                if (isLastQuestion) {
+                    speakTextRef.current("answer confirmed. Want to submit exam").then(() => {
+                        setIsSubmitConfirmingSafe(true);
+                        setVoiceStep('submit_confirm');
+                        if (recognitionRef.current) {
+                            setIsListening(true);
+                            recognitionRef.current.start();
+                        }
+                    });
+                } else {
+                    speakTextRef.current("answer confirmed. Now moving to next question").then(() => {
+                        handleNextRef.current();
+                    });
+                }
                 stopRecognition();
                 return;
             } else {
@@ -177,7 +221,7 @@ export const useExamVoice = ({
                     const newOptionText = currentQuestionRef.current.options[newOptionIndex].text;
                     handleAnswerRef.current(currentQuestionRef.current.id, newOptionId);
                     setPendingOptionId(newOptionId);
-                    // FIX: After changing the option, speak and then re-start listening for the new confirmation.
+                    // After changing the option, speak and then re-start listening for the new confirmation.
                     speakTextRef.current(`You selected ${newOptionText}. Confirm or speak a different option.`).then(() => {
                         if (recognitionRef.current) {
                             setIsListening(true);
@@ -191,6 +235,24 @@ export const useExamVoice = ({
                 }
                 stopRecognition();
             }
+        } else if (isSubmitConfirmingRef.current) {
+            // In submit confirmation mode
+            if (transcript.includes('yes') || transcript.includes('submit') || transcript.includes('confirm')) {
+                console.log('Submitting exam');
+                setIsSubmitConfirmingSafe(false);
+                setVoiceStep('question');
+                handleSubmitRef.current();
+                stopRecognition();
+                return;
+            } else if (transcript.includes('no')) {
+                console.log('Not submitting exam');
+                setIsSubmitConfirmingSafe(false);
+                setVoiceStep('question');
+                speakTextRef.current("Submission cancelled. You can continue answering questions.");
+                stopRecognition();
+                return;
+            }
+            stopRecognition();
         } else {
             // Normal mode: Handle option selection
             let optionIndex = -1;
@@ -204,7 +266,8 @@ export const useExamVoice = ({
                 const optionText = currentQuestionRef.current.options[optionIndex].text;
                 handleAnswerRef.current(currentQuestionRef.current.id, optionId);
                 setPendingOptionId(optionId);
-                setIsConfirming(true);
+                // Use the safe setter so the recognition callback sees the updated value
+                setIsConfirmingSafe(true);
                 setVoiceStep('confirming');
                 speakTextRef.current(`You selected ${optionText}. Confirm or speak a different option.`).then(() => {
                     // After speaking, start listening again for confirmation
@@ -224,7 +287,7 @@ export const useExamVoice = ({
 
     // Start voice input
     const startVoiceInput = () => {
-        if (recognitionRef.current && !isListening && (currentVoiceStepRef.current === 'question' || currentVoiceStepRef.current === 'confirming') && timerStarted && currentQuestionRef.current && questionsRef.current.length > 0) {
+        if (recognitionRef.current && !isListening && (currentVoiceStepRef.current === 'question' || currentVoiceStepRef.current === 'confirming' || currentVoiceStepRef.current === 'submit_confirm') && timerStarted && currentQuestionRef.current && questionsRef.current.length > 0) {
             console.log('Starting voice input');
             setIsListening(true);
             setVoiceStep('listening');
@@ -243,7 +306,7 @@ export const useExamVoice = ({
         isListening,
         voiceStep,
         startVoiceInput,
-        setVoiceStep
+        setVoiceStep,
+        isSubmitConfirming
     };
 };
-

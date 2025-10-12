@@ -47,6 +47,20 @@ const StudentVerification = ({ onVerified, examId }) => {
     }
   }, []);
 
+  // Speak welcome message automatically on page load
+  useEffect(() => {
+    const speakWelcome = async () => {
+      try {
+        await speakText("Welcome to the exam system. To verify yourself please click anywhere on the screen to activate voice input, then speak your roll number clearly.");
+        setWelcomeSpoken(true);
+        setSpeechEnabled(true);
+      } catch (error) {
+        console.error('Text-to-speech error:', error);
+      }
+    };
+    speakWelcome();
+  }, []);
+
   const startVoiceInput = async () => {
     // Enable speech on first interaction
     if (!speechEnabled) {

@@ -64,54 +64,6 @@ const ExamPage = () => {
         setCurrentQuestionId(questionId);
     };
 
-    // Voice hook (after dependencies)
-    const { startVoiceInput } = useExamVoice({
-        currentQuestion,
-        handleAnswer,
-        handleNext,
-        handlePrev,
-        setCurrentQuestionId,
-        questions,
-        studentName,
-        examTitle,
-        timerStarted,
-        isVerified,
-        examId,
-        setTimerStarted,
-        isLoaded,
-        speakText
-    });
-
-    // Speak welcome message when exam is loaded
-    useEffect(() => {
-        if (isVerified && questions.length > 0 && !welcomeSpoken) {
-            speakText(`Welcome ${studentName}. Instructions: You can navigate using voice commands like next, previous, or say option A, B, C, D to select answers. Click on the screen to start voice input.`).then(() => {
-                setWelcomeSpoken(true);
-            }).catch((error) => {
-                console.error('Error speaking welcome:', error);
-                setWelcomeSpoken(true); // Still set to true to proceed
-            });
-        }
-    }, [isVerified, questions.length, welcomeSpoken, studentName]);
-
-    // Start timer when exam is ready and welcome spoken
-    useEffect(() => {
-        if (isVerified && examId && questions.length > 0 && !timerStarted && welcomeSpoken) {
-            setTimerStarted(true);
-        }
-    }, [isVerified, examId, questions.length, timerStarted, welcomeSpoken]);
-
-    // Read current question when it changes and timer is started
-    useEffect(() => {
-        if (currentQuestion && timerStarted && currentQuestionId !== lastReadQuestionId) {
-            speakText(`Question: ${currentQuestion.questionText}. Options: A. ${currentQuestion.options[0].text}, B. ${currentQuestion.options[1].text}, C. ${currentQuestion.options[2].text}, D. ${currentQuestion.options[3].text}`).then(() => {
-                setLastReadQuestionId(currentQuestionId);
-            }).catch((error) => {
-                console.error('Error speaking question:', error);
-            });
-        }
-    }, [currentQuestion, timerStarted, currentQuestionId, lastReadQuestionId]);
-
     // Handle student verification with exam fetching
     const handleStudentVerifiedWithExams = async (studentData) => {
         handleStudentVerified(studentData);
@@ -143,6 +95,9 @@ const ExamPage = () => {
 
             await setDoc(doc(db, 'examResults', examId, 'submissions', studentId), submissionData);
 
+            // Speak success message
+            await speakText('Exam submitted successfully');
+
             // Navigate to the submission confirmation page with exam data
             navigate('/exam-submitted', {
                 state: {
@@ -156,6 +111,52 @@ const ExamPage = () => {
             alert('Failed to submit exam. Please try again.');
         }
     };
+
+    // Voice hook (after dependencies)
+    const { startVoiceInput, isSubmitConfirming } = useExamVoice({
+        currentQuestion,
+        handleAnswer,
+        handleNext,
+        handlePrev,
+        setCurrentQuestionId,
+        questions,
+        studentName,
+        examTitle,
+        timerStarted,
+        isVerified,
+        examId,
+        setTimerStarted,
+        isLoaded,
+        speakText,
+        handleSubmit
+    });
+
+    // Speak welcome message when exam is loaded and verified
+    useEffect(() => {
+        if (isVerified && questions.length > 0 && !welcomeSpoken) {
+            speakText(`Welcome ${studentName}. Instructions: You can navigate using voice commands like next, previous. Say option A, B, C, D to select answer. Say submit exam when you are ready to submit.`).then(() => {
+                setWelcomeSpoken(true);
+                // Start timer after welcome message is spoken
+                setTimerStarted(true);
+            }).catch((error) => {
+                console.error('Error speaking welcome:', error);
+                setWelcomeSpoken(true);
+                // Still start timer even if speech fails
+                setTimerStarted(true);
+            });
+        }
+    }, [isVerified, questions.length, welcomeSpoken, studentName]);
+
+    // Read current question when it changes and timer is started
+    useEffect(() => {
+        if (currentQuestion && timerStarted && currentQuestionId !== lastReadQuestionId) {
+            speakText(`Question: ${currentQuestion.questionText}. Options are: A. ${currentQuestion.options[0].text}, B. ${currentQuestion.options[1].text}, C. ${currentQuestion.options[2].text}, D. ${currentQuestion.options[3].text}`).then(() => {
+                setLastReadQuestionId(currentQuestionId);
+            }).catch((error) => {
+                console.error('Error speaking question:', error);
+            });
+        }
+    }, [currentQuestion, timerStarted, currentQuestionId, lastReadQuestionId]);
 
     // Keyboard navigation
     useEffect(() => {
@@ -313,6 +314,7 @@ const ExamPage = () => {
                 onSubmit={handleSubmit}
                 currentQuestionId={currentQuestionId}
                 totalQuestions={questions.length}
+                isSubmitConfirming={isSubmitConfirming}
             />
         </div>
     );
