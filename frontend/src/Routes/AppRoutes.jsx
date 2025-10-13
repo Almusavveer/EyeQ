@@ -12,6 +12,7 @@ import TeacherResults from "../Pages/TeacherResults";
 import ExamSubmitted from "../Pages/ExamSubmitted";
 import StudentResultDetail from "../Pages/StudentResultDetail";
 import ProtectedRoute from "../Components/ProtectedRoute";
+import PasteExamLink from "../Pages/PasteExamLink";
 
 const AppRoutes = () => {
   return (
@@ -19,7 +20,7 @@ const AppRoutes = () => {
       <Route path="/" element={<HomePage />} />
       <Route path="/role" element={<Role />} />
       <Route path="/exam/:examId" element={<ExamPage />} />
-      <Route path="/exam" element={<ExamPage />} />
+      <Route path="/paste-exam-link" element={<PasteExamLink />} />
       <Route
         path="/login"
         element={<Login />}

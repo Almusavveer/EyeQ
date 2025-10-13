@@ -26,7 +26,7 @@ const Role = () => {
             onClick={() => navigate("/login")}
           >
             <div className="bg-white bg-opacity-20 p-3 sm:p-4 rounded-full mb-3 sm:mb-4">
-              <FaChalkboardTeacher className="w-8 h-8 sm:w-10 sm:h-10 text-white"/>
+              <FaChalkboardTeacher className="w-8 h-8 sm:w-10 sm:h-10 text-[#FBC02D]"/>
             </div>
             <h2 className="text-lg sm:text-xl font-semibold">I'm a Teacher</h2>
             <p className="text-sm opacity-90 mt-2 text-center">
@@ -37,10 +37,10 @@ const Role = () => {
           {/* I'm a Student */}
           <button 
             className="w-full border-2 border-[#FBC02D] text-gray-800 rounded-2xl shadow-md p-6 sm:p-8 flex flex-col items-center hover:bg-yellow-50 transition-colors duration-200 touch-manipulation active:bg-yellow-100 min-h-[200px] sm:min-h-[240px]"
-            onClick={() => navigate("/exam")}
+            onClick={() => navigate("/paste-exam-link")}
           >
             <div className="bg-[#FBC02D] bg-opacity-10 p-3 sm:p-4 rounded-full mb-3 sm:mb-4">
-              <PiStudent className="w-8 h-8 sm:w-10 sm:h-10 text-[#FBC02D]" />
+              <PiStudent className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
             </div>
             <h2 className="text-lg sm:text-xl font-semibold">I'm a Student</h2>
             <p className="text-sm text-gray-600 mt-2 text-center">
